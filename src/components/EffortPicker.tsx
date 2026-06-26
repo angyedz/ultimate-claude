@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Box, Text, useInput } from '../ink.js'
+import { useTerminalSize } from '../hooks/useTerminalSize.js'
 import { useMainLoopModel } from '../hooks/useMainLoopModel.js'
 import { useAppState, useSetAppState } from '../state/AppState.js'
 import type { EffortLevel } from '../utils/effort.js'
@@ -200,28 +201,79 @@ function RainbowText({ text, frame }: { text: string; frame: number }) {
 }
 
 function SeaWave({ frame }: { frame: number }) {
-  const width = 60
+  const { columns } = useTerminalSize()
+  const height = 5
   
-  // Sea wave text graphics using cyan/blue shades
-  const chars1 = ['~', ' ', ' ', ' ', '~', ' ', ' ', ' ']
-  const chars2 = [' ', '≈', ' ', ' ', ' ', '≈', ' ', ' ']
-  const chars3 = [' ', ' ', '≋', ' ', ' ', ' ', '≋', ' ']
+  // Wave origin (centered horizontally, or on the right where ultracode is)
+  const originX = Math.min(Math.floor(columns * 0.8), columns - 5)
+  const originY = 2
   
-  let line1 = ''
-  let line2 = ''
-  let line3 = ''
+  const colors = [
+    '#030f26',
+    '#07224f',
+    '#0b3a7a',
+    '#0055bb',
+    '#0088ee',
+    '#00d5ff',
+    '#a6f5ff'
+  ] as const
   
-  for (let i = 0; i < width; i++) {
-    line1 += chars1[(i + frame) % chars1.length]
-    line2 += chars2[(i - frame) % chars2.length]
-    line3 += chars3[(i + Math.floor(frame / 2)) % chars3.length]
+  const textLines: Record<number, string> = {
+    1: '✦ ULTRACODE ACTIVE ✦',
+    3: 'Maximum thinking tokens for extreme complexity'
+  }
+  
+  const rowsList: Array<Array<{ char: string; bgColor: string; isTextChar: boolean }>> = []
+  
+  for (let y = 0; y < height; y++) {
+    const text = textLines[y]
+    const textLength = text ? text.length : 0
+    const startX = Math.floor((columns - textLength) / 2)
+    
+    const cells: Array<{ char: string; bgColor: string; isTextChar: boolean }> = []
+    for (let x = 0; x < columns; x++) {
+      // Calculate distance to origin
+      // Vertical distance is scaled by 2.2 to adjust for terminal font aspect ratio
+      const dx = x - originX
+      const dy = (y - originY) * 2.2
+      const d = Math.sqrt(dx * dx + dy * dy)
+      
+      // Calculate wave value
+      const val = Math.sin(d * 0.25 - frame * 0.4)
+      const colorIndex = Math.floor(((val + 1) / 2) * (colors.length - 0.01))
+      const bgColor = colors[colorIndex]!
+      
+      let char = ' '
+      let isTextChar = false
+      if (text && x >= startX && x < startX + textLength) {
+        char = text[x - startX]!
+        isTextChar = true
+      }
+      
+      cells.push({ char, bgColor, isTextChar })
+    }
+    rowsList.push(cells)
   }
   
   return (
-    <Box flexDirection="column" marginBottom={1}>
-      <Text color="cyan" bold={true}>{line1}</Text>
-      <Text color="cyan" dimColor={true}>{line2}</Text>
-      <Text color="blue" bold={true}>{line3}</Text>
+    <Box flexDirection="column" borderStyle="single" borderColor="ansi:cyan" paddingX={1} paddingY={0} marginBottom={1}>
+      {rowsList.map((row, y) => (
+        <Box key={y} flexDirection="row">
+          {row.map((cell, x) => {
+            const fgColor = cell.isTextChar ? '#ffffff' : undefined
+            return (
+              <Text
+                key={x}
+                backgroundColor={cell.bgColor as any}
+                color={fgColor as any}
+                bold={cell.isTextChar}
+              >
+                {cell.char}
+              </Text>
+            )
+          })}
+        </Box>
+      ))}
     </Box>
   )
 }
