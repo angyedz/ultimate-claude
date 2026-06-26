@@ -645,8 +645,8 @@ export function REPL({
   dynamicMcpConfig: initialDynamicMcpConfig,
   autoConnectIdeFlag,
   strictMcpConfig = false,
-  systemPrompt: customSystemPrompt,
-  appendSystemPrompt,
+  systemPrompt: _initialCustomSystemPrompt,
+  appendSystemPrompt: _initialAppendSystemPrompt,
   onBeforeQuery,
   onTurnComplete,
   disabled = false,
@@ -693,6 +693,8 @@ export function REPL({
   const ultraplanPendingChoice = useAppState(s => s.ultraplanPendingChoice);
   const ultraplanLaunchPending = useAppState(s => s.ultraplanLaunchPending);
   const viewingAgentTaskId = useAppState(s => s.viewingAgentTaskId);
+  const customSystemPrompt = useAppState(s => s.customSystemPrompt);
+  const appendSystemPrompt = useAppState(s => s.appendSystemPrompt);
   const setAppState = useSetAppState();
   const autoCompactTrackingBySessionRef = useRef(new Map<ReturnType<typeof getSessionId>, AutoCompactTrackingState>());
   const getAutoCompactTrackingForSession = useCallback((sessionId: ReturnType<typeof getSessionId>) => autoCompactTrackingBySessionRef.current.get(sessionId), []);

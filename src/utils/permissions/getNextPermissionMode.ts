@@ -53,6 +53,9 @@ export function getNextPermissionMode(
       return 'plan'
 
     case 'plan':
+      return 'turbo'
+
+    case 'turbo':
       if (toolPermissionContext.isBypassPermissionsModeAvailable) {
         return 'bypassPermissions'
       }

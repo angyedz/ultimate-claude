@@ -21,6 +21,7 @@ import { isPluginGloballyInstalled } from '../../utils/plugins/installedPluginsM
 import { createPluginId, detectEmptyMarketplaceReason, type EmptyMarketplaceReason, formatFailureDetails, formatMarketplaceLoadingErrors, loadMarketplacesWithGracefulDegradation } from '../../utils/plugins/marketplaceHelpers.js';
 import { loadKnownMarketplacesConfig } from '../../utils/plugins/marketplaceManager.js';
 import { OFFICIAL_MARKETPLACE_NAME } from '../../utils/plugins/officialMarketplace.js';
+import { ALLOWED_OFFICIAL_MARKETPLACE_NAMES } from '../../utils/plugins/schemas.js';
 import { installPluginFromMarketplace } from '../../utils/plugins/pluginInstallationHelpers.js';
 import { isPluginBlockedByPolicy } from '../../utils/plugins/pluginPolicy.js';
 import { plural } from '../../utils/stringUtils.js';
@@ -58,6 +59,7 @@ export function DiscoverPlugins({
   // View state
   const [viewState, setViewState] = useState<ViewState>('plugin-list');
   const [selectedPlugin, setSelectedPlugin] = useState<InstallablePlugin | null>(null);
+  const [selectedRepoFilter, setSelectedRepoFilter] = useState<string>('all');
 
   // Data state
   const [availablePlugins, setAvailablePlugins] = useState<InstallablePlugin[]>([]);
@@ -85,12 +87,22 @@ export function DiscoverPlugins({
     columns: terminalWidth
   } = useTerminalSize();
 
-  // Filter plugins based on search query
+  // Get all unique marketplaces
+  const marketplacesList = useMemo(() => {
+    const repos = new Set(availablePlugins.map(p => p.marketplaceName));
+    return ['all', ...Array.from(repos)];
+  }, [availablePlugins]);
+
+  // Filter plugins based on search query and selected repository filter
   const filteredPlugins = useMemo(() => {
-    if (!searchQuery) return availablePlugins;
+    let plugins = availablePlugins;
+    if (selectedRepoFilter !== 'all') {
+      plugins = plugins.filter(p => p.marketplaceName === selectedRepoFilter);
+    }
+    if (!searchQuery) return plugins;
     const lowerQuery = searchQuery.toLowerCase();
-    return availablePlugins.filter(plugin => plugin.entry.name.toLowerCase().includes(lowerQuery) || plugin.entry.description?.toLowerCase().includes(lowerQuery) || plugin.marketplaceName.toLowerCase().includes(lowerQuery));
-  }, [availablePlugins, searchQuery]);
+    return plugins.filter(plugin => plugin.entry.name.toLowerCase().includes(lowerQuery) || plugin.entry.description?.toLowerCase().includes(lowerQuery) || plugin.marketplaceName.toLowerCase().includes(lowerQuery));
+  }, [availablePlugins, searchQuery, selectedRepoFilter]);
 
   // Selection state
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -103,10 +115,10 @@ export function DiscoverPlugins({
     selectedIndex
   });
 
-  // Reset selection when search query changes
+  // Reset selection when search query or repository filter changes
   useEffect(() => {
     setSelectedIndex(0);
-  }, [searchQuery]);
+  }, [searchQuery, selectedRepoFilter]);
 
   // Details view state
   const [detailsMenuIndex, setDetailsMenuIndex] = useState(0);
@@ -161,21 +173,40 @@ export function DiscoverPlugins({
           const counts = await getInstallCounts();
           setInstallCounts(counts);
           if (counts) {
-            // Sort by install count (descending), then alphabetically
+            // Sort by install count (descending), then alphabetically, prioritizing third-party marketplaces
             uninstalledPlugins.sort((a_0, b_0) => {
+              const isThirdPartyA = !ALLOWED_OFFICIAL_MARKETPLACE_NAMES.has(a_0.marketplaceName.toLowerCase());
+              const isThirdPartyB = !ALLOWED_OFFICIAL_MARKETPLACE_NAMES.has(b_0.marketplaceName.toLowerCase());
+              if (isThirdPartyA && !isThirdPartyB) return -1;
+              if (isThirdPartyB && !isThirdPartyA) return 1;
+
               const countA = counts.get(a_0.pluginId) ?? 0;
               const countB = counts.get(b_0.pluginId) ?? 0;
               if (countA !== countB) return countB - countA;
               return a_0.entry.name.localeCompare(b_0.entry.name);
             });
           } else {
-            // No counts available - sort alphabetically
-            uninstalledPlugins.sort((a_1, b_1) => a_1.entry.name.localeCompare(b_1.entry.name));
+            // No counts available - sort alphabetically, prioritizing third-party marketplaces
+            uninstalledPlugins.sort((a_1, b_1) => {
+              const isThirdPartyA = !ALLOWED_OFFICIAL_MARKETPLACE_NAMES.has(a_1.marketplaceName.toLowerCase());
+              const isThirdPartyB = !ALLOWED_OFFICIAL_MARKETPLACE_NAMES.has(b_1.marketplaceName.toLowerCase());
+              if (isThirdPartyA && !isThirdPartyB) return -1;
+              if (isThirdPartyB && !isThirdPartyA) return 1;
+
+              return a_1.entry.name.localeCompare(b_1.entry.name);
+            });
           }
         } catch (error_0) {
-          // Log the error, then gracefully degrade to alphabetical sort
+          // Log the error, then gracefully degrade to alphabetical sort, prioritizing third-party marketplaces
           logForDebugging(`Failed to fetch install counts: ${errorMessage(error_0)}`);
-          uninstalledPlugins.sort((a, b) => a.entry.name.localeCompare(b.entry.name));
+          uninstalledPlugins.sort((a, b) => {
+            const isThirdPartyA = !ALLOWED_OFFICIAL_MARKETPLACE_NAMES.has(a.marketplaceName.toLowerCase());
+            const isThirdPartyB = !ALLOWED_OFFICIAL_MARKETPLACE_NAMES.has(b.marketplaceName.toLowerCase());
+            if (isThirdPartyA && !isThirdPartyB) return -1;
+            if (isThirdPartyB && !isThirdPartyA) return 1;
+
+            return a.entry.name.localeCompare(b.entry.name);
+          });
         }
         setAvailablePlugins(uninstalledPlugins);
 
@@ -340,13 +371,19 @@ export function DiscoverPlugins({
   useInput((input, _key) => {
     const keyIsNotCtrlOrMeta = !_key.ctrl && !_key.meta;
     if (!isSearchMode) {
+      if ((input === 'r' || input === 'R') && keyIsNotCtrlOrMeta) {
+        const idx = marketplacesList.indexOf(selectedRepoFilter);
+        const nextIdx = (idx + 1) % marketplacesList.length;
+        setSelectedRepoFilter(marketplacesList[nextIdx] || 'all');
+        return;
+      }
       // Enter search mode with '/' or any printable character
       if (input === '/' && keyIsNotCtrlOrMeta) {
         setIsSearchMode(true);
         setSearchQuery('');
       } else if (keyIsNotCtrlOrMeta && input.length > 0 && !/^\s+$/.test(input) &&
       // Don't enter search mode for navigation keys
-      input !== 'j' && input !== 'k' && input !== 'i') {
+      input !== 'j' && input !== 'k' && input !== 'i' && input !== 'r' && input !== 'R') {
         setIsSearchMode(true);
         setSearchQuery(input);
       }
@@ -579,6 +616,15 @@ export function DiscoverPlugins({
           </Text>}
       </Box>
 
+      {/* Repository Filter Indicator */}
+      <Box marginBottom={1} flexDirection="row">
+        <Text dimColor>Repository: </Text>
+        <Text color="suggestion" bold>{selectedRepoFilter === 'all' ? 'All Repositories' : selectedRepoFilter}</Text>
+        <Text dimColor> (Press </Text>
+        <Text bold color="claude">r</Text>
+        <Text dimColor> to cycle)</Text>
+      </Box>
+
       {/* Search box */}
       <Box marginBottom={1}>
         <SearchBox query={searchQuery} isFocused={isSearchMode} isTerminalFocused={isTerminalFocused} width={terminalWidth - 4} cursorOffset={searchCursorOffset} />
@@ -618,6 +664,7 @@ export function DiscoverPlugins({
                 {plugin_5.entry.name}
                 <Text dimColor> · {plugin_5.marketplaceName}</Text>
                 {plugin_5.entry.tags?.includes('community-managed') && <Text dimColor> [Community Managed]</Text>}
+                {!ALLOWED_OFFICIAL_MARKETPLACE_NAMES.has(plugin_5.marketplaceName.toLowerCase()) && <Text color="success" bold> [Recommended]</Text>}
                 {installCounts && plugin_5.marketplaceName === OFFICIAL_MARKETPLACE_NAME && <Text dimColor>
                       {' · '}
                       {formatInstallCount(installCounts.get(plugin_5.pluginId) ?? 0)}{' '}
@@ -688,16 +735,20 @@ function DiscoverPluginsKeyHint(t0) {
     t4 = $[5];
     t5 = $[6];
   }
-  let t6;
-  if ($[7] !== t1 || $[8] !== t3) {
-    t6 = <Box marginTop={1}><Text dimColor={true} italic={true}><Byline>{t1}{t2}{t3}{t4}{t5}</Byline></Text></Box>;
-    $[7] = t1;
-    $[8] = t3;
-    $[9] = t6;
-  } else {
-    t6 = $[9];
-  }
-  return t6;
+  return (
+    <Box marginTop={1}>
+      <Text dimColor={true} italic={true}>
+        <Byline>
+          {t1}
+          {t2}
+          {t3}
+          {t4}
+          <Text dimColor={true}> · [r] cycle repo</Text>
+          {t5}
+        </Byline>
+      </Text>
+    </Box>
+  );
 }
 
 /**

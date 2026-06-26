@@ -14,6 +14,10 @@ import { installOrUpdateClaudePackage } from '../../utils/localInstaller.js'
 import { installLatest as installLatestNative } from '../../utils/nativeInstaller/index.js'
 import type { PackageManager } from '../../utils/nativeInstaller/packageManagers.js'
 import { resolveUpdateStrategy } from '../../utils/updateStrategy.js'
+import { execa } from 'execa'
+import { existsSync } from 'fs'
+import { dirname, join } from 'path'
+import { fileURLToPath } from 'url'
 
 const PACKAGE_URL = MACRO.PACKAGE_URL
 const CURRENT_VERSION = MACRO.DISPLAY_VERSION
@@ -34,7 +38,15 @@ type UpdateState =
   | { type: 'no-package-manager' }
   | { type: 'up-to-date'; version: string }
   | { type: 'updating'; version: string; via: string }
+  | {
+      type: 'updating-development'
+      step: 'git-pull' | 'dependency-install' | 'building'
+      gitStatus?: 'error' | 'success'
+      installStatus?: 'error' | 'success'
+      buildStatus?: 'error' | 'success'
+    }
   | { type: 'success'; version: string; via: string }
+  | { type: 'success-development'; pulled: boolean }
   | { type: 'error'; message: string }
 
 // Manager-specific upgrade command, mirroring src/cli/update.ts.
@@ -51,6 +63,57 @@ function packageManagerHint(manager: PackageManager): string | null {
   }
 }
 
+function findPackageRoot(): string | null {
+  try {
+    let currentDir = dirname(fileURLToPath(import.meta.url))
+    while (true) {
+      if (existsSync(join(currentDir, 'package.json'))) {
+        return currentDir
+      }
+      const parentDir = dirname(currentDir)
+      if (parentDir === currentDir) {
+        break
+      }
+      currentDir = parentDir
+    }
+  } catch {}
+  return null
+}
+
+async function getUpdateCommands(packageRoot: string): Promise<{ install: string; build: string }> {
+  let installCmd = 'npm install'
+  let buildCmd = 'npm run build'
+
+  if (existsSync(join(packageRoot, 'bun.lock')) || existsSync(join(packageRoot, '.bun-version'))) {
+    try {
+      await execa('bun', ['--version'])
+      installCmd = 'bun install'
+      buildCmd = 'bun run build'
+      return { install: installCmd, build: buildCmd }
+    } catch {}
+  }
+  
+  if (existsSync(join(packageRoot, 'pnpm-lock.yaml'))) {
+    try {
+      await execa('pnpm', ['--version'])
+      installCmd = 'pnpm install'
+      buildCmd = 'pnpm run build'
+      return { install: installCmd, build: buildCmd }
+    } catch {}
+  }
+
+  if (existsSync(join(packageRoot, 'yarn.lock'))) {
+    try {
+      await execa('yarn', ['--version'])
+      installCmd = 'yarn install'
+      buildCmd = 'yarn run build'
+      return { install: installCmd, build: buildCmd }
+    } catch {}
+  }
+
+  return { install: installCmd, build: buildCmd }
+}
+
 function Update({ onDone, force, target }: UpdateProps): React.ReactNode {
   const [state, setState] = useState<UpdateState>({ type: 'checking' })
   // Terminal states are entered once, but guard against a double-schedule —
@@ -58,6 +121,100 @@ function Update({ onDone, force, target }: UpdateProps): React.ReactNode {
   const doneScheduled = useRef(false)
 
   useEffect(() => {
+    async function runDevUpdate() {
+      const packageRoot = findPackageRoot()
+      if (!packageRoot) {
+        setState({
+          type: 'error',
+          message: 'Could not find the root directory of the project.',
+        })
+        return
+      }
+
+      setState({
+        type: 'updating-development',
+        step: 'git-pull',
+      })
+
+      // 1. git pull
+      try {
+        await execa('git', ['pull'], { cwd: packageRoot })
+      } catch (error) {
+        logForDebugging(`Dev update git pull failed: ${error}`, { level: 'error' })
+        setState({
+          type: 'updating-development',
+          step: 'git-pull',
+          gitStatus: 'error',
+        })
+        await new Promise(resolve => setTimeout(resolve, 1500))
+        setState({
+          type: 'error',
+          message: `Git pull failed: ${errorMessage(error)}`,
+        })
+        return
+      }
+
+      // 2. install dependencies
+      setState({
+        type: 'updating-development',
+        step: 'dependency-install',
+        gitStatus: 'success',
+      })
+
+      const cmds = await getUpdateCommands(packageRoot)
+      const installParts = cmds.install.split(' ')
+      try {
+        await execa(installParts[0]!, installParts.slice(1), { cwd: packageRoot })
+      } catch (error) {
+        logForDebugging(`Dev update install failed: ${error}`, { level: 'error' })
+        setState({
+          type: 'updating-development',
+          step: 'dependency-install',
+          gitStatus: 'success',
+          installStatus: 'error',
+        })
+        await new Promise(resolve => setTimeout(resolve, 1500))
+        setState({
+          type: 'error',
+          message: `Installing dependencies failed: ${errorMessage(error)}`,
+        })
+        return
+      }
+
+      // 3. rebuild project
+      setState({
+        type: 'updating-development',
+        step: 'building',
+        gitStatus: 'success',
+        installStatus: 'success',
+      })
+
+      const buildParts = cmds.build.split(' ')
+      try {
+        await execa(buildParts[0]!, buildParts.slice(1), { cwd: packageRoot })
+      } catch (error) {
+        logForDebugging(`Dev update build failed: ${error}`, { level: 'error' })
+        setState({
+          type: 'updating-development',
+          step: 'building',
+          gitStatus: 'success',
+          installStatus: 'success',
+          buildStatus: 'error',
+        })
+        await new Promise(resolve => setTimeout(resolve, 1500))
+        setState({
+          type: 'error',
+          message: `Build failed: ${errorMessage(error)}`,
+        })
+        return
+      }
+
+      setState({
+        type: 'success-development',
+        pulled: true,
+      })
+    }
+
     async function run() {
       try {
         // Route by how the running install is actually managed, so we never
@@ -69,6 +226,10 @@ function Update({ onDone, force, target }: UpdateProps): React.ReactNode {
         )
 
         if (strategy.action === 'blocked') {
+          if (strategy.reason === 'development') {
+            await runDevUpdate()
+            return
+          }
           setState({ type: 'blocked', reason: strategy.reason })
           return
         }
@@ -181,7 +342,12 @@ function Update({ onDone, force, target }: UpdateProps): React.ReactNode {
   }, [force, target])
 
   useEffect(() => {
-    if (doneScheduled.current || state.type === 'checking' || state.type === 'updating') {
+    if (
+      doneScheduled.current ||
+      state.type === 'checking' ||
+      state.type === 'updating' ||
+      state.type === 'updating-development'
+    ) {
       return
     }
     doneScheduled.current = true
@@ -268,6 +434,60 @@ function Update({ onDone, force, target }: UpdateProps): React.ReactNode {
         </Text>
       )}
 
+      {state.type === 'updating-development' && (
+        <Box flexDirection="column" gap={1}>
+          <Text color="claude">⚡ Updating development build from source...</Text>
+          <Box marginLeft={2} flexDirection="column">
+            <Box>
+              <StatusIcon
+                status={
+                  state.step === 'git-pull'
+                    ? 'loading'
+                    : state.gitStatus === 'error'
+                      ? 'error'
+                      : 'success'
+                }
+                withSpace
+              />
+              <Text>Git pull</Text>
+              {state.gitStatus === 'error' && <Text color="error"> (failed)</Text>}
+            </Box>
+            <Box>
+              <StatusIcon
+                status={
+                  state.step === 'dependency-install'
+                    ? 'loading'
+                    : state.step === 'git-pull'
+                      ? 'pending'
+                      : state.installStatus === 'error'
+                        ? 'error'
+                        : 'success'
+                }
+                withSpace
+              />
+              <Text>Installing dependencies</Text>
+              {state.installStatus === 'error' && <Text color="error"> (failed)</Text>}
+            </Box>
+            <Box>
+              <StatusIcon
+                status={
+                  state.step === 'building'
+                    ? 'loading'
+                    : state.step === 'git-pull' || state.step === 'dependency-install'
+                      ? 'pending'
+                      : state.buildStatus === 'error'
+                        ? 'error'
+                        : 'success'
+                }
+                withSpace
+              />
+              <Text>Rebuilding project</Text>
+              {state.buildStatus === 'error' && <Text color="error"> (failed)</Text>}
+            </Box>
+          </Box>
+        </Box>
+      )}
+
       {state.type === 'success' && (
         <Box flexDirection="column" gap={1}>
           <Box>
@@ -279,6 +499,27 @@ function Update({ onDone, force, target }: UpdateProps): React.ReactNode {
           <Box marginLeft={2}>
             <Text dimColor>
               Restart Claude Code for the new version to take effect.
+            </Text>
+          </Box>
+        </Box>
+      )}
+
+      {state.type === 'success-development' && (
+        <Box flexDirection="column" gap={1}>
+          <Box>
+            <StatusIcon status="success" withSpace />
+            <Text color="success" bold>
+              Development build updated and rebuilt successfully!
+            </Text>
+          </Box>
+          <Box marginLeft={2}>
+            <Text dimColor>
+              {state.pulled
+                ? 'Pulled latest changes from Git and rebuilt successfully.'
+                : 'Project rebuilt successfully.'}
+            </Text>
+            <Text dimColor>
+              Restart ultimate-claude for changes to take effect.
             </Text>
           </Box>
         </Box>
@@ -310,6 +551,8 @@ function terminalDoneMessage(state: UpdateState): {
   switch (state.type) {
     case 'success':
       return { message: 'Claude Code updated successfully', delay: 3000 }
+    case 'success-development':
+      return { message: 'Development build updated and rebuilt successfully', delay: 3000 }
     case 'up-to-date':
       return { message: 'Claude Code is already up to date', delay: 1500 }
     case 'blocked':

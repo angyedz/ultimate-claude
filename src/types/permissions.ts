@@ -26,13 +26,14 @@ export type ExternalPermissionMode = (typeof EXTERNAL_PERMISSION_MODES)[number]
 
 // Exhaustive mode union for typechecking. The user-addressable runtime set
 // is INTERNAL_PERMISSION_MODES below.
-export type InternalPermissionMode = ExternalPermissionMode | 'auto' | 'bubble'
+export type InternalPermissionMode = ExternalPermissionMode | 'auto' | 'bubble' | 'turbo'
 export type PermissionMode = InternalPermissionMode
 
 // Runtime validation set: modes that are user-addressable (settings.json
 // defaultMode, --permission-mode CLI flag, conversation recovery).
 export const INTERNAL_PERMISSION_MODES = [
   ...EXTERNAL_PERMISSION_MODES,
+  'turbo',
   ...(feature('TRANSCRIPT_CLASSIFIER') ? (['auto'] as const) : ([] as const)),
 ] as const satisfies readonly PermissionMode[]
 
@@ -118,7 +119,7 @@ export type PermissionUpdate =
   | {
       type: 'setMode'
       destination: PermissionUpdateDestination
-      mode: ExternalPermissionMode
+      mode: ExternalPermissionMode | 'turbo'
     }
   | {
       type: 'addDirectories'

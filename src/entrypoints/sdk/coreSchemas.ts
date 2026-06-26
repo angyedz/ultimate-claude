@@ -359,6 +359,7 @@ export const PermissionModeSchema = lazySchema(() =>
       'fullAccess',
       'plan',
       'dontAsk',
+      'turbo',
     ])
     .describe(
       'Permission mode for controlling how tool executions are handled. ' +

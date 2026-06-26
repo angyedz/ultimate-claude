@@ -2549,6 +2549,8 @@ async function run(): Promise<CommanderCommand> {
       const defaultState = getDefaultAppState();
       const headlessInitialState: AppState = {
         ...defaultState,
+        customSystemPrompt: systemPrompt,
+        appendSystemPrompt,
         mcp: {
           ...defaultState.mcp,
           clients: mcpClients,
@@ -2856,6 +2858,8 @@ async function run(): Promise<CommanderCommand> {
       settings: getInitialSettings(),
       tasks: {},
       agentNameRegistry: new Map(),
+      customSystemPrompt: systemPrompt,
+      appendSystemPrompt,
       // Session-scoped auto-continuation goal — starts unset, matching
       // AppStateStore's default state factory.
       goal: null,

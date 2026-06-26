@@ -1,5 +1,7 @@
 // biome-ignore-all assist/source/organizeImports: internal-only import markers must not be reordered
 import { type as osType, version as osVersion, release as osRelease } from 'os'
+import { existsSync, readFileSync } from 'fs'
+import { join } from 'path'
 import { env } from '../utils/env.js'
 import { getIsGit } from '../utils/git.js'
 import { getCwd } from '../utils/cwd.js'
@@ -43,7 +45,7 @@ import {
   isScratchpadEnabled,
   getScratchpadDir,
 } from '../utils/permissions/filesystem.js'
-import { isEnvTruthy } from '../utils/envUtils.js'
+import { getClaudeConfigHomeDir, isEnvTruthy } from '../utils/envUtils.js'
 import { isReplModeEnabled } from '../tools/REPLTool/constants.js'
 import { feature } from 'bun:bundle'
 import { getFeatureValue_CACHED_MAY_BE_STALE } from 'src/services/analytics/growthbook.js'
@@ -166,9 +168,27 @@ export function prependBullets(items: Array<string | string[]>): string[] {
   )
 }
 
-function getSimpleIntroSection(
+function getSectionOverride(name: string): string | null {
+  try {
+    const dir = join(getClaudeConfigHomeDir(), 'system_prompts')
+    const filePath = join(dir, `${name}.txt`)
+    if (existsSync(filePath)) {
+      return readFileSync(filePath, 'utf8')
+    }
+  } catch (err) {
+    // Ignore error
+  }
+  return null
+}
+
+export function getSimpleIntroSection(
   outputStyleConfig: OutputStyleConfig | null,
+  bypassOverride = false,
 ): string {
+  if (!bypassOverride) {
+    const override = getSectionOverride('intro')
+    if (override !== null) return override
+  }
   // eslint-disable-next-line custom-rules/prompt-spacing
   return `
 You are an interactive agent that helps users ${outputStyleConfig !== null ? 'according to your "Output Style" below, which describes how you should respond to user queries.' : 'with software engineering tasks.'} Use the instructions below and the tools available to you to assist the user.
@@ -177,7 +197,11 @@ ${CYBER_RISK_INSTRUCTION}
 IMPORTANT: You must NEVER generate or guess URLs for the user unless you are confident that the URLs are for helping the user with programming. You may use URLs provided by the user in their messages or local files.`
 }
 
-function getSimpleSystemSection(): string {
+export function getSimpleSystemSection(bypassOverride = false): string {
+  if (!bypassOverride) {
+    const override = getSectionOverride('system')
+    if (override !== null) return override
+  }
   const items = [
     `All text you output outside of tool use is displayed to the user. Output text to communicate with the user. You can use Github-flavored markdown for formatting, and will be rendered in a monospace font using the CommonMark specification.`,
     `Tools are executed in a user-selected permission mode. When you attempt to call a tool that is not automatically allowed by the user's permission mode or permission settings, the user will be prompted so that they can approve or deny the execution. If the user denies a tool you call, do not re-attempt the exact same tool call. Instead, think about why the user has denied the tool call and adjust your approach.`,
@@ -190,7 +214,11 @@ function getSimpleSystemSection(): string {
   return ['# System', ...prependBullets(items)].join(`\n`)
 }
 
-function getSimpleDoingTasksSection(): string {
+export function getSimpleDoingTasksSection(bypassOverride = false): string {
+  if (!bypassOverride) {
+    const override = getSectionOverride('doing_tasks')
+    if (override !== null) return override
+  }
   const codeStyleSubitems = [
     `Don't add features, refactor code, or make "improvements" beyond what was asked. A bug fix doesn't need surrounding code cleaned up. A simple feature doesn't need extra configurability. Don't add docstrings, comments, or type annotations to code you didn't change. Only add comments where the logic isn't self-evident.`,
     `Don't add error handling, fallbacks, or validation for scenarios that can't happen. Trust internal code and framework guarantees. Only validate at system boundaries (user input, external APIs). Don't use feature flags or backwards-compatibility shims when you can just change the code.`,
@@ -246,7 +274,11 @@ function getSimpleDoingTasksSection(): string {
   return [`# Doing tasks`, ...prependBullets(items)].join(`\n`)
 }
 
-function getActionsSection(): string {
+export function getActionsSection(bypassOverride = false): string {
+  if (!bypassOverride) {
+    const override = getSectionOverride('actions')
+    if (override !== null) return override
+  }
   return `# Executing actions with care
 
 Carefully consider the reversibility and blast radius of actions. Generally you can freely take local, reversible actions like editing files or running tests. But for actions that are hard to reverse, affect shared systems beyond your local environment, or could otherwise be risky or destructive, check with the user before proceeding. The cost of pausing to confirm is low, while the cost of an unwanted action (lost work, unintended messages sent, deleted branches) can be very high. For actions like these, consider the context, the action, and user instructions, and by default transparently communicate the action and ask for confirmation before proceeding. This default can be changed by user instructions - if explicitly asked to operate more autonomously, then you may proceed without confirmation, but still attend to the risks and consequences when taking actions. A user approving an action (like a git push) once does NOT mean that they approve it in all contexts, so unless actions are authorized in advance in durable instructions like CLAUDE.md files, always confirm first. Authorization stands for the scope specified, not beyond. Match the scope of your actions to what was actually requested.
@@ -260,7 +292,11 @@ Examples of the kind of risky actions that warrant user confirmation:
 When you encounter an obstacle, do not use destructive actions as a shortcut to simply make it go away. For instance, try to identify root causes and fix underlying issues rather than bypassing safety checks (e.g. --no-verify). If you discover unexpected state like unfamiliar files, branches, or configuration, investigate before deleting or overwriting, as it may represent the user's in-progress work. For example, typically resolve merge conflicts rather than discarding changes; similarly, if a lock file exists, investigate what process holds it rather than deleting it. In short: only take risky actions carefully, and when in doubt, ask before acting. Follow both the spirit and letter of these instructions - measure twice, cut once.`
 }
 
-function getUsingYourToolsSection(enabledTools: Set<string>): string {
+export function getUsingYourToolsSection(enabledTools: Set<string>, bypassOverride = false): string {
+  if (!bypassOverride) {
+    const override = getSectionOverride('using_tools')
+    if (override !== null) return override
+  }
   const taskToolName = [TASK_CREATE_TOOL_NAME, TODO_WRITE_TOOL_NAME].find(n =>
     enabledTools.has(n),
   )
@@ -396,7 +432,11 @@ function getSessionSpecificGuidanceSection(
 }
 
 // @[MODEL LAUNCH]: Remove this section when we launch numbat.
-function getOutputEfficiencySection(): string {
+export function getOutputEfficiencySection(bypassOverride = false): string {
+  if (!bypassOverride) {
+    const override = getSectionOverride('output_efficiency')
+    if (override !== null) return override
+  }
   if (process.env.USER_TYPE === 'ant') {
     return `# Communicating with the user
 When sending user-facing text, you're writing for a person, not logging to a console. Assume users can't see most tool calls or thinking - only your text output. Before your first tool call, briefly state what you're about to do. While working, give short updates at key moments: when you find something load-bearing (a bug, a root cause), when changing direction, when you've made progress without an update.
@@ -423,7 +463,11 @@ Focus text output on:
 If you can say it in one sentence, don't use three. Prefer short, direct sentences over long explanations. This does not apply to code or tool calls.`
 }
 
-function getSimpleToneAndStyleSection(): string {
+export function getSimpleToneAndStyleSection(bypassOverride = false): string {
+  if (!bypassOverride) {
+    const override = getSectionOverride('tone_and_style')
+    if (override !== null) return override
+  }
   const items = [
     `Only use emojis if the user explicitly requests it. Avoid using emojis in all communication unless asked.`,
     process.env.USER_TYPE === 'ant'

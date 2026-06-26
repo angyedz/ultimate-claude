@@ -13,6 +13,7 @@ export type SuggestionItem = {
   description?: string
   metadata?: unknown
   color?: keyof Theme
+  argumentHint?: string
 }
 
 export type SuggestionType =
@@ -118,21 +119,30 @@ const SuggestionItemRow = memo(function SuggestionItemRow({
     )
   }
 
+  const commandText = item.displayText
+  const hintText = item.argumentHint ? ` ${item.argumentHint}` : ''
+  const nameAndHint = commandText + hintText
+  const nameAndHintWidth = stringWidth(nameAndHint)
+
   const maxNameWidth = Math.floor(columns * 0.4)
   const displayTextWidth = Math.min(
-    maxColumnWidth ?? stringWidth(item.displayText) + 5,
+    maxColumnWidth ?? nameAndHintWidth + 5,
     maxNameWidth,
   )
 
-  let displayText = item.displayText
-  if (stringWidth(displayText) > displayTextWidth - 2) {
-    displayText = truncateToWidth(displayText, displayTextWidth - 2)
+  let displayedCommand = commandText
+  let displayedHint = hintText
+  if (stringWidth(commandText) > displayTextWidth - 2) {
+    displayedCommand = truncateToWidth(commandText, displayTextWidth - 2)
+    displayedHint = ''
+  } else if (nameAndHintWidth > displayTextWidth - 2) {
+    displayedHint = truncateToWidth(hintText, displayTextWidth - 2 - stringWidth(displayedCommand))
   }
 
-  const paddedDisplayText =
-    selectionPrefix +
-    displayText +
-    ' '.repeat(Math.max(0, displayTextWidth - stringWidth(displayText)))
+  const displayedCombinedWidth = stringWidth(displayedCommand + displayedHint)
+  const paddingLength = Math.max(0, displayTextWidth - displayedCombinedWidth)
+  const paddedSpacer = ' '.repeat(paddingLength)
+
   const tagText = item.tag ? `[${item.tag}] ` : ''
   const tagWidth = stringWidth(tagText)
   const descriptionWidth = Math.max(
@@ -142,18 +152,33 @@ const SuggestionItemRow = memo(function SuggestionItemRow({
   const truncatedDescription = item.description
     ? truncateToWidth(item.description.replace(/\s+/g, ' '), descriptionWidth)
     : ''
-  const lineContent = `${paddedDisplayText}${tagText}${truncatedDescription}`
 
   return (
-    <Box width="100%" opaque={true} backgroundColor={rowBackgroundColor}>
-      <Text
-        color={textColor}
-        dimColor={!isSelected}
-        bold={isSelected}
-        wrap="truncate"
-      >
-        {lineContent}
+    <Box width="100%" opaque={true} backgroundColor={rowBackgroundColor} flexDirection="row">
+      <Text color={textColor} dimColor={!isSelected} bold={isSelected}>
+        {selectionPrefix}
       </Text>
+      <Text color={textColor} bold={isSelected}>
+        {displayedCommand}
+      </Text>
+      {displayedHint ? (
+        <Text color={textColor} dimColor={true}>
+          {displayedHint}
+        </Text>
+      ) : null}
+      <Text color={textColor} dimColor={!isSelected}>
+        {paddedSpacer}
+      </Text>
+      {item.tag ? (
+        <Text color="brand" bold={true}>
+          {tagText}
+        </Text>
+      ) : null}
+      {truncatedDescription ? (
+        <Text color={textColor} dimColor={!isSelected}>
+          {truncatedDescription}
+        </Text>
+      ) : null}
     </Box>
   )
 })
@@ -180,7 +205,12 @@ export function PromptInputFooterSuggestions({
 
   const maxColumnWidth =
     maxColumnWidthProp ??
-    Math.max(...suggestions.map(item => stringWidth(item.displayText))) + 5
+    Math.max(
+      ...suggestions.map(item => {
+        const hint = item.argumentHint ? ` ${item.argumentHint}` : ''
+        return stringWidth(item.displayText + hint)
+      }),
+    ) + 5
 
   const startIndex = Math.max(
     0,

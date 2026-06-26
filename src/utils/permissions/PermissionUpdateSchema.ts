@@ -7,12 +7,16 @@
  */
 import z from 'zod/v4'
 // Types extracted to src/types/permissions.ts to break import cycles
-import type {
-  PermissionUpdate,
-  PermissionUpdateDestination,
+import {
+  type PermissionUpdate,
+  type PermissionUpdateDestination,
+  EXTERNAL_PERMISSION_MODES,
 } from '../../types/permissions.js'
 import { lazySchema } from '../lazySchema.js'
-import { externalPermissionModeSchema } from './PermissionMode.js'
+
+export const permissionUpdateModeSchema = lazySchema(() =>
+  z.enum([...EXTERNAL_PERMISSION_MODES, 'turbo']),
+)
 import {
   permissionBehaviorSchema,
   permissionRuleValueSchema,
@@ -61,7 +65,7 @@ export const permissionUpdateSchema = lazySchema(() =>
     }),
     z.object({
       type: z.literal('setMode'),
-      mode: externalPermissionModeSchema(),
+      mode: permissionUpdateModeSchema(),
       destination: permissionUpdateDestinationSchema(),
     }),
     z.object({

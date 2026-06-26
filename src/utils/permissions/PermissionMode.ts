@@ -84,6 +84,13 @@ const PERMISSION_MODE_CONFIG: Partial<
     color: 'error',
     external: 'dontAsk',
   },
+  turbo: {
+    title: 'Turbo mode',
+    shortTitle: 'Turbo',
+    symbol: '⚡',
+    color: 'error',
+    external: 'bypassPermissions',
+  },
   ...(feature('TRANSCRIPT_CLASSIFIER')
     ? {
         auto: {

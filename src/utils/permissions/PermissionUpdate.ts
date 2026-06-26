@@ -320,7 +320,7 @@ export function persistPermissionUpdate(update: PermissionUpdate): void {
       )
       updateSettingsForSource(update.destination, {
         permissions: {
-          defaultMode: update.mode,
+          defaultMode: update.mode as any,
         },
       })
       break

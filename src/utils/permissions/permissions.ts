@@ -1297,7 +1297,8 @@ async function hasPermissionsToUseToolInner(
   if (
     toolPermissionResult?.behavior === 'ask' &&
     toolPermissionResult.decisionReason?.type === 'safetyCheck' &&
-    appState.toolPermissionContext.mode !== 'fullAccess'
+    appState.toolPermissionContext.mode !== 'fullAccess' &&
+    appState.toolPermissionContext.mode !== 'turbo'
   ) {
     return toolPermissionResult
   }
@@ -1311,6 +1312,7 @@ async function hasPermissionsToUseToolInner(
   const shouldBypassPermissions =
     appState.toolPermissionContext.mode === 'bypassPermissions' ||
     appState.toolPermissionContext.mode === 'fullAccess' ||
+    appState.toolPermissionContext.mode === 'turbo' ||
     (appState.toolPermissionContext.mode === 'plan' &&
       appState.toolPermissionContext.isBypassPermissionsModeAvailable)
   if (shouldBypassPermissions) {

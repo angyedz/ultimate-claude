@@ -158,6 +158,8 @@ export type AppState = DeepImmutable<{
   replBridgeInitialName: string | undefined
   // Always-on bridge: first-time remote dialog pending (set by /remote-control command)
   showRemoteCallout: boolean
+  customSystemPrompt: string | undefined
+  appendSystemPrompt: string | undefined
 }> & {
   // Unified task state - excluded from DeepImmutable because TaskState contains function types
   tasks: { [taskId: string]: TaskState }
@@ -503,6 +505,8 @@ export function getDefaultAppState(): AppState {
       mode: initialMode,
     },
     agent: undefined,
+    customSystemPrompt: undefined,
+    appendSystemPrompt: undefined,
     agentDefinitions: { activeAgents: [], allAgents: [] },
     fileHistory: {
       snapshots: [],

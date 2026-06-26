@@ -388,7 +388,8 @@ export function getCommandSuggestionsMaxWidth(
     if (commandName === null || safeIsHidden(command)) {
       continue
     }
-    visibleNames.push(commandName)
+    const hint = command.argumentHint ? ` ${command.argumentHint}` : ''
+    visibleNames.push(commandName + hint)
   }
 
   if (visibleNames.length === 0) {
@@ -460,6 +461,7 @@ function createCommandSuggestionItem(
     displayText: `/${commandName}${aliasText}`,
     tag: isWorkflow ? 'workflow' : undefined,
     description: renderedDescription,
+    argumentHint: cmd.argumentHint,
     metadata: cmd,
   }
 }
