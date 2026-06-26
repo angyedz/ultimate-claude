@@ -30,9 +30,7 @@ const tokenCache = new Map<string, Token[]>();
 // One pass instead of 10× includes scans.
 const MD_SYNTAX_RE = /[#*`|[>\-_~]|\n\n|^\d+\. |\n\d+\. /;
 function hasMarkdownSyntax(s: string): boolean {
-  // Sample first 500 chars — if markdown exists it's usually early (headers,
-  // code fence, list). Long tool outputs are mostly plain text tails.
-  return MD_SYNTAX_RE.test(s.length > 500 ? s.slice(0, 500) : s);
+  return MD_SYNTAX_RE.test(s);
 }
 function cachedLexer(content: string): Token[] {
   // Fast path: plain text with no markdown syntax → single paragraph token.
