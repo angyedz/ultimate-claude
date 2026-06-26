@@ -436,7 +436,7 @@ export const createClaudeForChromeMcpServer = noop;
             return {
               contents: `
 const noop = () => null;
-;(globalThis.__ultimate-claudeStubMarkers ??= []).push(${marker});
+;(globalThis["__ultimate-claudeStubMarkers"] ??= []).push(${marker});
 export default noop;
 ${exports}
 `,

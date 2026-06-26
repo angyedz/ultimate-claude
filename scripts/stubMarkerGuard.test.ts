@@ -13,7 +13,7 @@ test('canonicalStub keys on the src-relative path across separators', () => {
 })
 
 test('collectBundleStubs parses the JSON string-literal marker (minified builds)', () => {
-  const bundle = `;(globalThis.__ultimate-claudeStubMarkers ??= []).push("missing-module-stub:/build/src/utils/foo.js");`
+  const bundle = `;(globalThis["__ultimate-claudeStubMarkers"] ??= []).push("missing-module-stub:/build/src/utils/foo.js");`
   const stubbed = collectBundleStubs(bundle)
   expect([...stubbed.keys()]).toEqual(['src/utils/foo'])
 })
@@ -31,7 +31,7 @@ test('collectBundleStubs parses Bun module-boundary comments (unminified builds)
 test('collectBundleStubs keeps Windows paths intact in the string-literal marker', () => {
   // JSON.stringify doubles the backslashes, matching what ships in the bundle.
   const marker = JSON.stringify('missing-module-stub:C:\\repo\\ultimate-claude\\src\\commands\\dream\\dream.js')
-  const bundle = `;(globalThis.__ultimate-claudeStubMarkers ??= []).push(${marker});`
+  const bundle = `;(globalThis["__ultimate-claudeStubMarkers"] ??= []).push(${marker});`
 
   const stubbed = collectBundleStubs(bundle)
 
@@ -48,7 +48,7 @@ test('collectBundleStubs keeps spaced Windows paths intact in the string-literal
   const marker = JSON.stringify(
     'missing-module-stub:C:\\Users\\Jane Doe\\ultimate-claude\\src\\commands\\dream\\dream.js',
   )
-  const bundle = `;(globalThis.__ultimate-claudeStubMarkers ??= []).push(${marker});`
+  const bundle = `;(globalThis["__ultimate-claudeStubMarkers"] ??= []).push(${marker});`
 
   const stubbed = collectBundleStubs(bundle)
 
@@ -70,7 +70,7 @@ test('collectBundleStubs handles paths containing spaces', () => {
   const marker = JSON.stringify(
     'missing-module-stub:/Users/John Doe/projects/ultimate-claude/src/utils/foo.js',
   )
-  const bundle = `;(globalThis.__ultimate-claudeStubMarkers ??= []).push(${marker});`
+  const bundle = `;(globalThis["__ultimate-claudeStubMarkers"] ??= []).push(${marker});`
 
   expect([...collectBundleStubs(bundle).keys()]).toEqual(['src/utils/foo'])
 })
