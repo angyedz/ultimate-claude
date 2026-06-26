@@ -204,6 +204,9 @@ export function Onboarding({
   });
   return <Box flexDirection="column">
       <WelcomeV2 />
+      <Box flexDirection="column" marginTop={0} paddingLeft={1}>
+        <Text dimColor>Based on Claude Code · Developed with OpenClaude</Text>
+      </Box>
       <Box flexDirection="column" marginTop={1}>
         {currentStep?.component}
         {exitState.pending && <Box padding={1}>

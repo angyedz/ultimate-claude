@@ -37,7 +37,7 @@ export function createWhatsNewFeed(releaseNotes: string[]): FeedConfig {
     };
   });
   return {
-    title: "Claude Code Updates",
+    title: "Ultimate Claude Code Updates",
     lines,
     footer: lines.length > 0 ? '/release-notes for more' : undefined,
     emptyMessage: 'Check /release-notes for recent updates'

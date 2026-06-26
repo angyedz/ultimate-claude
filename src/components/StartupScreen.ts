@@ -240,6 +240,7 @@ export function printStartupScreen(modelOverride?: string): void {
 
   out.push(`${ansiRgb(...BORDER)}\u255a${'\u2550'.repeat(W - 2)}\u255d${RESET}`)
   out.push(`  ${DIM}${ansiRgb(...DIMCOL)}ultimate-claude ${RESET}${ansiRgb(...ACCENT)}v${MACRO.DISPLAY_VERSION ?? MACRO.VERSION}${RESET}`)
+  out.push(`  ${DIM}${ansiRgb(...DIMCOL)}Based on Claude Code \u00b7 OpenClaude${RESET}`)
   out.push('')
 
   process.stdout.write(out.join('\n') + '\n')
