@@ -12,16 +12,21 @@ for cmd in git curl node; do
   fi
 done
 
-# Clone repository (replace with actual URL if different)
-REPO_URL="https://github.com/angyedz/ultimate-claude.git"
-PROJECT_DIR="ultimate-claude"
-if [ -d "$PROJECT_DIR" ]; then
-  echo "Directory $PROJECT_DIR already exists. Pulling latest changes..."
-  cd "$PROJECT_DIR"
-  git pull
+# Detect if we are already inside the repository
+if [ -f "package.json" ] && grep -q "ultimate-claude" package.json; then
+  echo "Detected existing repository – using current directory."
 else
-  git clone "$REPO_URL"
-  cd "$PROJECT_DIR"
+  # Clone repository (replace with actual URL if different)
+  REPO_URL="https://github.com/angyedz/ultimate-claude.git"
+  PROJECT_DIR="ultimate-claude"
+  if [ -d "$PROJECT_DIR" ]; then
+    echo "Directory $PROJECT_DIR already exists. Pulling latest changes..."
+    cd "$PROJECT_DIR"
+    git pull
+  else
+    git clone "$REPO_URL"
+    cd "$PROJECT_DIR"
+  fi
 fi
 
 # Install dependencies (npm preferred, fallback to bun)
@@ -34,7 +39,14 @@ else
   exit 1
 fi
 
-echo "Installation complete."
+# Build the project (creates dist/cli.mjs)
+if command -v bun >/dev/null 2>&1; then
+  bun run build
+else
+  npm run build
+fi
+
+echo "Installation and build complete."
 
 # Determine bin directory (default to ~/.local/bin)
 BIN_DIR="$HOME/.local/bin"
@@ -46,7 +58,7 @@ cat > "$WRAPPER" <<'EOS'
 #!/usr/bin/env bash
 # Resolve script directory
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# Change to project directory (assumes script located in project root's bin)
+# Change to project root (assumes script located in repo root's bin)
 PROJECT_ROOT="$(cd "${DIR}/.." && pwd)"
 cd "${PROJECT_ROOT}"
 # Prefer npm, fallback to bun
@@ -66,38 +78,25 @@ echo "A wrapper script has been installed to $WRAPPER"
 # Add BIN_DIR to PATH in common shell rc files
 if [ -n "$SHELL" ]; then
   case "$SHELL" in
-    */bash)
-      RCFILE="$HOME/.bashrc"
-      ;;
-    */zsh)
-      RCFILE="$HOME/.zshrc"
-      ;;
-    */fish)
-      RCFILE="$HOME/.config/fish/config.fish"
-      ;;
-    *)
-      RCFILE=""
-      ;;
+    */bash)   RCFILE="$HOME/.bashrc" ;;
+    */zsh)    RCFILE="$HOME/.zshrc" ;;
+    */fish)   RCFILE="$HOME/.config/fish/config.fish" ;;
+    *)        RCFILE="" ;;
   esac
 fi
 
 if [ -n "$RCFILE" ]; then
   if [[ "$RCFILE" == *.fish ]]; then
-    # fish config
     if ! grep -Fxq "set -gx PATH $BIN_DIR \$PATH" "$RCFILE"; then
       echo "set -gx PATH $BIN_DIR \$PATH" >> "$RCFILE"
       echo "Added $BIN_DIR to PATH in $RCFILE"
     fi
   else
-    # bash/zsh config
     if ! grep -Fxq "export PATH=\"$BIN_DIR:\$PATH\"" "$RCFILE"; then
       echo "export PATH=\"$BIN_DIR:\$PATH\"" >> "$RCFILE"
       echo "Added $BIN_DIR to PATH in $RCFILE"
     fi
   fi
-fi
-
-# If no rc file detected, suggest manual addition
-if [ -z "$RCFILE" ]; then
+else
   echo "Add $BIN_DIR to your PATH manually to run 'ultimate-claude' from any location."
 fi
