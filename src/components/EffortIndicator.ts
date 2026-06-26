@@ -37,7 +37,7 @@ export function effortLevelToSymbol(level: EffortLevel): string {
     case 'max':
       return EFFORT_MAX
     case 'ultracode':
-      return '🔥'
+      return '✦'
     default:
       // Defensive: level can originate from remote config. If an unknown
       // value slips through, render the high symbol rather than undefined.

@@ -167,6 +167,8 @@ export function EffortPicker({ onSelect, onCancel }: Props) {
         </Text>
       </Box>
 
+      {isUltracodeFocused && <SeaWave frame={animationFrame} />}
+
       <Box marginBottom={1}>
         <Text dimColor={true} italic={true}>
           <Byline>
@@ -197,6 +199,33 @@ function RainbowText({ text, frame }: { text: string; frame: number }) {
   )
 }
 
+function SeaWave({ frame }: { frame: number }) {
+  const width = 60
+  
+  // Sea wave text graphics using cyan/blue shades
+  const chars1 = ['~', ' ', ' ', ' ', '~', ' ', ' ', ' ']
+  const chars2 = [' ', '≈', ' ', ' ', ' ', '≈', ' ', ' ']
+  const chars3 = [' ', ' ', '≋', ' ', ' ', ' ', '≋', ' ']
+  
+  let line1 = ''
+  let line2 = ''
+  let line3 = ''
+  
+  for (let i = 0; i < width; i++) {
+    line1 += chars1[(i + frame) % chars1.length]
+    line2 += chars2[(i - frame) % chars2.length]
+    line3 += chars3[(i + Math.floor(frame / 2)) % chars3.length]
+  }
+  
+  return (
+    <Box flexDirection="column" marginBottom={1}>
+      <Text color="cyan" bold={true}>{line1}</Text>
+      <Text color="cyan" dimColor={true}>{line2}</Text>
+      <Text color="blue" bold={true}>{line3}</Text>
+    </Box>
+  )
+}
+
 function OptionItem({
   option,
   isFocused,
@@ -213,16 +242,12 @@ function OptionItem({
 
   if (level === 'ultracode' && isFocused) {
     const spinnerFrames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
-    const emojiFrames = ['🔥', '⚡', '✨', '💫', '💥', '☄️', '🌟']
     const spinner = spinnerFrames[animationFrame % spinnerFrames.length]!
-    const emoji = emojiFrames[animationFrame % emojiFrames.length]!
     
     return (
       <Box flexDirection="row">
         <Text color="cyan" bold={true}>{spinner} </Text>
-        <Text>{emoji} </Text>
         <RainbowText text="ULTRACODE" frame={animationFrame} />
-        <Text> {emoji}</Text>
         <Text color="cyan" bold={true}> {spinner}</Text>
         {isCurrent && <Text color="success" bold={true}> (current)</Text>}
       </Box>

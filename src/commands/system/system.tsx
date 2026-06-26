@@ -24,27 +24,27 @@ import { Box, Text } from '../../ink.js';
 const BUILTIN_PERSONAS = [
   {
     name: 'developer',
-    label: '💻 Senior Developer (Pragmatic & Clean)',
+    label: 'Senior Developer (Pragmatic & Clean)',
     prompt: 'You are a pragmatic, senior developer who writes clean, idiomatic, and highly readable code. You explain complex architectural patterns in a clear, concise manner and focus on performance, security, and testability.'
   },
   {
     name: 'reviewer',
-    label: '🔍 Meticulous Code Reviewer',
+    label: 'Meticulous Code Reviewer',
     prompt: 'You are a meticulous, pedantic code reviewer. Your goal is to find bugs, security vulnerabilities, edge cases, performance issues, and stylistic problems in the code. For every issue, explain why it is a problem and suggest a concrete, step-by-step fix.'
   },
   {
     name: 'ux',
-    label: '🎨 UX/UI Frontend Specialist',
+    label: 'UX/UI Frontend Specialist',
     prompt: 'You are an expert UX/UI designer and frontend engineer. You focus on building stunning, polished, highly responsive, and accessible user interfaces. You advocate for clean CSS/HTML, consistent spacing, modern color theory (e.g. curated palettes, glassmorphism), and subtle, pleasing micro-animations.'
   },
   {
     name: 'rust-cpp',
-    label: '🦀 Low-Level Systems Expert (Rust / C++)',
+    label: 'Low-Level Systems Expert (Rust / C++)',
     prompt: 'You are a low-level systems programming expert specializing in Rust and C++. You prioritize memory safety, zero-cost abstractions, efficient CPU/memory usage, concurrency safety, and proper idiomatic patterns (e.g., lifetimes, borrow checker, smart pointers).'
   },
   {
     name: 'writer',
-    label: '📝 Technical Copywriter & Writer',
+    label: 'Technical Copywriter & Writer',
     prompt: 'You are a professional technical writer and documentation specialist. You write clear, structured, and user-friendly documentation, tutorials, and comments. You prefer using Markdown, clear headings, diagrams, and illustrative examples.'
   }
 ];
@@ -52,37 +52,37 @@ const BUILTIN_PERSONAS = [
 const SECTIONS = [
   {
     name: 'intro',
-    label: '💻 Section 1: Intro & Cyber Risk',
+    label: 'Section 1: Intro & Cyber Risk',
     getDefault: (opts: { outputStyleConfig: any }) => getSimpleIntroSection(opts.outputStyleConfig, true)
   },
   {
     name: 'system',
-    label: '⚙️ Section 2: System & Permissions',
+    label: 'Section 2: System & Permissions',
     getDefault: () => getSimpleSystemSection(true)
   },
   {
     name: 'doing_tasks',
-    label: '📋 Section 3: Doing tasks & Code style',
+    label: 'Section 3: Doing tasks & Code style',
     getDefault: () => getSimpleDoingTasksSection(true)
   },
   {
     name: 'actions',
-    label: '⚠️ Section 4: Executing actions with care',
+    label: 'Section 4: Executing actions with care',
     getDefault: () => getActionsSection(true)
   },
   {
     name: 'using_tools',
-    label: '🔧 Section 5: Using your tools',
+    label: 'Section 5: Using your tools',
     getDefault: (opts: { enabledTools: Set<string> }) => getUsingYourToolsSection(opts.enabledTools, true)
   },
   {
     name: 'tone_and_style',
-    label: '🎨 Section 6: Tone and style',
+    label: 'Section 6: Tone and style',
     getDefault: () => getSimpleToneAndStyleSection(true)
   },
   {
     name: 'output_efficiency',
-    label: '⚡ Section 7: Output efficiency',
+    label: 'Section 7: Output efficiency',
     getDefault: () => getOutputEfficiencySection(true)
   }
 ];
@@ -307,9 +307,9 @@ function SystemPromptManager({ onDone, context }: Props) {
         if (result.content !== null) {
           await saveSectionContent(section.name, result.content);
           if (!result.content.trim()) {
-            setStatusMessage(`Reset section "${section.name}" to default 🟢`);
+            setStatusMessage(`Reset section "${section.name}" to default`);
           } else {
-            setStatusMessage(`Updated section "${section.name}" successfully 🟢`);
+            setStatusMessage(`Updated section "${section.name}" successfully`);
           }
         }
       } catch (err) {
@@ -358,14 +358,14 @@ function SystemPromptManager({ onDone, context }: Props) {
 
   if (screen === 'main') {
     const mainOptions = [
-      { value: 'edit_sections', label: '🧩 Edit individual system prompt sections (recommended)' },
-      { value: 'edit_append', label: '📝 Edit custom instructions (appended to default)' },
-      { value: 'edit_custom', label: '⚠️ Edit full override prompt (replaces default instructions)' },
-      { value: 'builtin', label: '🎭 Switch to built-in persona' },
-      { value: 'custom', label: '📂 Load custom persona from disk' },
-      { value: 'save', label: '💾 Save current custom instructions as persona' },
-      { value: 'reset', label: '🔄 Reset to default' },
-      { value: 'cancel', label: '❌ Cancel' }
+      { value: 'edit_sections', label: 'Edit individual system prompt sections (recommended)' },
+      { value: 'edit_append', label: 'Edit custom instructions (appended to default)' },
+      { value: 'edit_custom', label: 'Edit full override prompt (replaces default instructions)' },
+      { value: 'builtin', label: 'Switch to built-in persona' },
+      { value: 'custom', label: 'Load custom persona from disk' },
+      { value: 'save', label: 'Save current custom instructions as persona' },
+      { value: 'reset', label: 'Reset to default' },
+      { value: 'cancel', label: 'Cancel' }
     ];
     return (
       <Dialog title="System Prompt Manager" subtitle={getStatusLine()} onCancel={handleCancel} color="permission" showNavigationHint>
@@ -379,10 +379,10 @@ function SystemPromptManager({ onDone, context }: Props) {
       const isOverridden = existsSync(join(getSystemPromptsDir(), `${s.name}.txt`));
       return {
         value: s.name,
-        label: `${s.label}${isOverridden ? ' 🟢' : ''}`
+        label: `${s.label}${isOverridden ? ' (modified)' : ''}`
       };
     });
-    sectionOptions.push({ value: 'back', label: '↩️ Back' });
+    sectionOptions.push({ value: 'back', label: 'Back' });
 
     const getSectionsSubtitle = () => {
       if (statusMessage) return statusMessage;
@@ -399,7 +399,7 @@ function SystemPromptManager({ onDone, context }: Props) {
   if (screen === 'builtin') {
     const builtinOptions = [
       ...BUILTIN_PERSONAS.map(p => ({ value: p.name, label: p.label, description: p.prompt, inlineDescriptions: true })),
-      { value: 'back', label: '↩️ Back' }
+      { value: 'back', label: 'Back' }
     ];
     return (
       <Dialog title="Choose Built-in Persona" subtitle="This will be appended as custom instructions." onCancel={() => setScreen('main')} color="permission" showNavigationHint>
@@ -410,15 +410,15 @@ function SystemPromptManager({ onDone, context }: Props) {
 
   if (screen === 'custom') {
     const customOptions = [
-      ...customPersonas.map(p => ({ value: p.name, label: `📂 ${p.name}`, description: p.prompt })),
-      { value: 'back', label: '↩️ Back' }
+      ...customPersonas.map(p => ({ value: p.name, label: p.name, description: p.prompt })),
+      { value: 'back', label: 'Back' }
     ];
     return (
       <Dialog title="Choose Custom Persona" subtitle="Select a previously saved custom prompt." onCancel={() => setScreen('main')} color="permission" showNavigationHint>
         {customPersonas.length === 0 ? (
           <Box flexDirection="column" gap={1}>
             <Text dimColor>No custom personas found in ~/.config/claude/personas/</Text>
-            <Select options={[{ value: 'back', label: '↩️ Back' }]} onChange={() => setScreen('main')} onCancel={() => setScreen('main')} />
+            <Select options={[{ value: 'back', label: 'Back' }]} onChange={() => setScreen('main')} onCancel={() => setScreen('main')} />
           </Box>
         ) : (
           <Select options={customOptions} onChange={handleSelectCustom} onCancel={() => setScreen('main')} />
@@ -440,7 +440,7 @@ function SystemPromptManager({ onDone, context }: Props) {
         labelValueSeparator: ': ',
         onChange: setSaveName
       },
-      { value: 'cancel_save', label: '↩️ Back' }
+      { value: 'cancel_save', label: 'Back' }
     ];
     return (
       <Dialog title="Save Custom Persona" subtitle="Saves current instructions so you can load them later." onCancel={() => setScreen('main')} color="permission" showNavigationHint>
