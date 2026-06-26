@@ -16,9 +16,6 @@ import {
 } from '../utils/effort.js'
 import { getAPIProvider } from '../utils/model/providers.js'
 import { getReasoningEffortForModel } from '../services/api/providerConfig.js'
-import { effortLevelToSymbol } from './EffortIndicator.js'
-import { KeyboardShortcutHint } from './design-system/KeyboardShortcutHint.js'
-import { Byline } from './design-system/Byline.js'
 
 type EffortOption = {
   value: string
@@ -31,30 +28,74 @@ type Props = {
   onCancel?: () => void
 }
 
+// Purple pixel wave pattern — a 7-column wide pixelated noise field
+// animated by shifting rows per frame. Covers the ultracode zone.
+function UltracodeWave({ frameCount, widthCells, height }: { frameCount: number; widthCells: number; height: number }) {
+  // Build a simple pseudo-random purple/violet pixel matrix that scrolls
+  const palette = [
+    '#1a0040',
+    '#2d006e',
+    '#3d0098',
+    '#5200c8',
+    '#6b00f0',
+    '#8a2be2',
+    '#9932cc',
+    '#b44df0',
+    '#c875ff',
+    '#7b00d4',
+    '#4b0082',
+  ] as const
+
+  const rows: string[][] = []
+  for (let y = 0; y < height; y++) {
+    const cells: string[] = []
+    for (let x = 0; x < widthCells; x++) {
+      // pseudo-random but deterministic per cell; animated by frame offset
+      const seed = (x * 17 + y * 31 + frameCount * 7) % 256
+      const noiseVal = (Math.sin(seed * 2.39996) + 1) / 2
+      const idx = Math.floor(noiseVal * palette.length) % palette.length
+      cells.push(palette[idx]!)
+    }
+    rows.push(cells)
+  }
+
+  return (
+    <Box flexDirection="column">
+      {rows.map((row, y) => (
+        <Box key={y} flexDirection="row">
+          {row.map((bg, x) => (
+            <Text key={x} backgroundColor={bg as any}> </Text>
+          ))}
+        </Box>
+      ))}
+    </Box>
+  )
+}
+
 export function EffortPicker({ onSelect, onCancel }: Props) {
   const model = useMainLoopModel()
   const appStateEffort = useAppState((s: any) => s.effortValue)
   const setAppState = useSetAppState()
+  const { columns } = useTerminalSize()
   const provider = getAPIProvider()
   const usesOpenAIEffort = modelUsesOpenAIEffort(model)
   const availableLevels = getAvailableEffortLevels(model)
   const currentDisplayedLevel = getDisplayedEffortLevel(model, appStateEffort)
+  const supportsEffort = modelSupportsEffort(model)
 
   const modelReasoningEffort = usesOpenAIEffort ? getReasoningEffortForModel(model) : undefined
-  
+
   const options: EffortOption[] = [
     {
       value: 'auto',
       description: 'Use the default effort level for your model',
       isAvailable: true,
     },
-    ...availableLevels.map(level => {
-      return {
-        value: level,
-        description: getEffortLevelDescription(level as EffortLevel),
-        isAvailable: true,
-      }
-    }),
+    ...availableLevels.map(level => ({
+      value: level,
+      description: getEffortLevelDescription(level as EffortLevel),
+      isAvailable: true,
+    })),
   ]
 
   if (availableLevels.length > 0) {
@@ -78,6 +119,14 @@ export function EffortPicker({ onSelect, onCancel }: Props) {
     return idx >= 0 ? idx : 0
   })
 
+  const [animFrame, setAnimFrame] = useState(0)
+  const isUltracodeSelected = options[focusedIndex]?.value === 'ultracode'
+
+  useEffect(() => {
+    const timer = setInterval(() => setAnimFrame(f => f + 1), 80)
+    return () => clearInterval(timer)
+  }, [])
+
   useInput((input, key) => {
     if (key.leftArrow || key.upArrow) {
       setFocusedIndex(prev => (prev - 1 + options.length) % options.length)
@@ -92,19 +141,13 @@ export function EffortPicker({ onSelect, onCancel }: Props) {
 
   function handleSelect(value: string) {
     if (value === 'auto') {
-      setAppState(prev => ({
-        ...prev,
-        effortValue: undefined,
-      }))
+      setAppState(prev => ({ ...prev, effortValue: undefined }))
       onSelect(undefined)
     } else {
       const effortLevel = isOpenAIEffortLevel(value)
         ? openAIEffortToStandard(value)
         : (value as EffortLevel)
-      setAppState(prev => ({
-        ...prev,
-        effortValue: effortLevel,
-      }))
+      setAppState(prev => ({ ...prev, effortValue: effortLevel }))
       onSelect(effortLevel)
     }
   }
@@ -113,219 +156,137 @@ export function EffortPicker({ onSelect, onCancel }: Props) {
     onCancel?.()
   }
 
-  const supportsEffort = modelSupportsEffort(model)
+  const n = options.length
+  // How many terminal columns the slider occupies
+  const sliderWidth = Math.min(columns - 4, 80)
+  // Width of each option slot
+  const slotWidth = Math.floor(sliderWidth / n)
 
-  const [animationFrame, setAnimationFrame] = useState(0)
-  const isUltracodeFocused = options[focusedIndex]?.value === 'ultracode'
+  // Current option label and sub-label
+  const focused = options[focusedIndex]!
+  const subLabel = focused.value === 'ultracode' ? 'xhigh + workflows' : undefined
 
-  useEffect(() => {
-    if (isUltracodeFocused) {
-      const timer = setInterval(() => {
-        setAnimationFrame(f => f + 1)
-      }, 100)
-      return () => clearInterval(timer)
-    }
-  }, [isUltracodeFocused])
+  // For the ultracode purple block: it covers the right portion of the slider
+  // starting from the xhigh position to the right edge
+  const ultracodeIndex = options.findIndex(o => o.value === 'ultracode')
+  const xhighIndex = options.findIndex(o => o.value === 'xhigh' || o.value === 'max')
+  // Start of the purple zone (from xhigh onward if exists, else 60%)
+  const purpleStartSlot = xhighIndex >= 0 ? xhighIndex : Math.floor(n * 0.6)
+  const purpleWidthCells = sliderWidth - purpleStartSlot * slotWidth
+
+  // Indicator triangle column position
+  const indicatorCol = focusedIndex * slotWidth + Math.floor(slotWidth / 2)
 
   return (
-    <Box flexDirection="column">
-      <Box marginBottom={1} flexDirection="column">
-        <Text color="remember" bold={true}>Set effort level</Text>
-        <Text dimColor={true}>
-            {supportsEffort && usesOpenAIEffort
-              ? `OpenAI/Codex provider (${provider})`
-              : supportsEffort
-              ? `Claude model · ${provider} provider`
-              : `Effort not supported for this model`
-          }
+    <Box flexDirection="column" paddingTop={1}>
+      {/* Header */}
+      <Box marginBottom={1} flexDirection="row" gap={2}>
+        <Text bold color="white">Effort</Text>
+        <Text dimColor>
+          {supportsEffort && usesOpenAIEffort
+            ? `OpenAI/Codex (${provider})`
+            : supportsEffort
+            ? `Claude · ${provider}`
+            : `Effort not supported`}
         </Text>
       </Box>
 
-      <Box flexDirection="row" flexWrap="wrap" marginBottom={1}>
-        {options.map((option, index) => {
-          const isFocused = index === focusedIndex
-          const isCurrent = option.value === 'auto'
-            ? appStateEffort === undefined
-            : currentDisplayedLevel === option.value || (usesOpenAIEffort && option.value === 'xhigh' && currentDisplayedLevel === 'max')
-          
-          return (
-            <Box key={option.value} marginRight={3}>
-              <OptionItem
-                option={option}
-                isFocused={isFocused}
-                isCurrent={isCurrent}
-                animationFrame={animationFrame}
-              />
+      {/* Faster / Smarter labels */}
+      <Box width={sliderWidth} flexDirection="row" justifyContent="space-between" marginBottom={0}>
+        <Text dimColor>Faster</Text>
+        <Text dimColor>Smarter</Text>
+      </Box>
+
+      {/* Purple pixel wave zone — absolutely positioned to right portion */}
+      <Box flexDirection="row" width={sliderWidth} position="relative" marginBottom={0}>
+        {/* Empty left portion */}
+        <Box width={purpleStartSlot * slotWidth} flexDirection="column">
+          {/* Indicator triangle row */}
+          <Box flexDirection="row">
+            {Array.from({ length: purpleStartSlot * slotWidth }, (_, i) => {
+              const isIndicator = i === indicatorCol && indicatorCol < purpleStartSlot * slotWidth
+              return (
+                <Text key={i} color={isIndicator ? 'white' : undefined}>
+                  {isIndicator ? '▲' : ' '}
+                </Text>
+              )
+            })}
+          </Box>
+          {/* Empty space below (wave height - 1 extra rows) */}
+          {Array.from({ length: 3 }, (_, row) => (
+            <Box key={row} flexDirection="row">
+              {Array.from({ length: purpleStartSlot * slotWidth }, (_, i) => (
+                <Text key={i}> </Text>
+              ))}
             </Box>
+          ))}
+        </Box>
+
+        {/* Purple animated wave covering right portion */}
+        {purpleWidthCells > 0 && (
+          <Box flexDirection="column">
+            {/* Triangle row within wave zone */}
+            <Box flexDirection="row">
+              {Array.from({ length: purpleWidthCells }, (_, i) => {
+                const globalCol = purpleStartSlot * slotWidth + i
+                const isIndicator = globalCol === indicatorCol
+                return (
+                  <Text
+                    key={i}
+                    backgroundColor={isIndicator ? undefined : ('#3d0098' as any)}
+                    color={isIndicator ? 'white' : undefined}
+                    bold={isIndicator}
+                  >
+                    {isIndicator ? '▲' : ' '}
+                  </Text>
+                )
+              })}
+            </Box>
+            {/* Wave rows */}
+            <UltracodeWave frameCount={animFrame} widthCells={purpleWidthCells} height={3} />
+          </Box>
+        )}
+      </Box>
+
+      {/* Horizontal line */}
+      <Box flexDirection="row" width={sliderWidth} marginBottom={0}>
+        <Text dimColor>{'─'.repeat(sliderWidth)}</Text>
+      </Box>
+
+      {/* Option labels row */}
+      <Box flexDirection="row" width={sliderWidth} marginBottom={1}>
+        {options.map((opt, i) => {
+          const isFocused = i === focusedIndex
+          const label = opt.value === 'auto' ? 'auto' : opt.value === 'ultracode' ? 'ultracode' : opt.value
+          const paddedLabel = label.padEnd(slotWidth).slice(0, slotWidth)
+          return (
+            <Text
+              key={opt.value}
+              bold={isFocused}
+              color={isFocused ? 'white' : ('gray' as any)}
+            >
+              {paddedLabel}
+            </Text>
           )
         })}
       </Box>
 
-      <Box marginBottom={1} minHeight={2} flexDirection="row">
-        <Text dimColor={true}>Description: </Text>
-        <Text italic={true} color="remember">
-          {options[focusedIndex]?.description}
-        </Text>
-      </Box>
-
-      {isUltracodeFocused && <SeaWave frame={animationFrame} />}
-
-      <Box marginBottom={1}>
-        <Text dimColor={true} italic={true}>
-          <Byline>
-            <KeyboardShortcutHint shortcut="Enter" action="confirm" />
-            <KeyboardShortcutHint shortcut="Esc" action="cancel" />
-          </Byline>
-        </Text>
-      </Box>
-    </Box>
-  )
-}
-
-function RainbowText({ text, frame }: { text: string; frame: number }) {
-  const colors: Array<'red' | 'yellow' | 'green' | 'blue' | 'magenta' | 'cyan'> = [
-    'red', 'yellow', 'green', 'blue', 'magenta', 'cyan'
-  ]
-  return (
-    <>
-      {text.split('').map((char, index) => {
-        const color = colors[(index + frame) % colors.length]!
-        return (
-          <Text key={index} color={color} bold={true}>
-            {char}
-          </Text>
-        )
-      })}
-    </>
-  )
-}
-
-function SeaWave({ frame }: { frame: number }) {
-  const { columns } = useTerminalSize()
-  const height = 5
-  
-  // Wave origin (centered horizontally, or on the right where ultracode is)
-  const originX = Math.min(Math.floor(columns * 0.8), columns - 5)
-  const originY = 2
-  
-  const colors = [
-    '#030f26',
-    '#07224f',
-    '#0b3a7a',
-    '#0055bb',
-    '#0088ee',
-    '#00d5ff',
-    '#a6f5ff'
-  ] as const
-  
-  const textLines: Record<number, string> = {
-    1: '✦ ULTRACODE ACTIVE ✦',
-    3: 'Maximum thinking tokens for extreme complexity'
-  }
-  
-  const rowsList: Array<Array<{ char: string; bgColor: string; isTextChar: boolean }>> = []
-  
-  for (let y = 0; y < height; y++) {
-    const text = textLines[y]
-    const textLength = text ? text.length : 0
-    const startX = Math.floor((columns - textLength) / 2)
-    
-    const cells: Array<{ char: string; bgColor: string; isTextChar: boolean }> = []
-    for (let x = 0; x < columns; x++) {
-      // Calculate distance to origin
-      // Vertical distance is scaled by 2.2 to adjust for terminal font aspect ratio
-      const dx = x - originX
-      const dy = (y - originY) * 2.2
-      const d = Math.sqrt(dx * dx + dy * dy)
-      
-      // Calculate wave value
-      const val = Math.sin(d * 0.25 - frame * 0.4)
-      const colorIndex = Math.floor(((val + 1) / 2) * (colors.length - 0.01))
-      const bgColor = colors[colorIndex]!
-      
-      let char = ' '
-      let isTextChar = false
-      if (text && x >= startX && x < startX + textLength) {
-        char = text[x - startX]!
-        isTextChar = true
-      }
-      
-      cells.push({ char, bgColor, isTextChar })
-    }
-    rowsList.push(cells)
-  }
-  
-  return (
-    <Box flexDirection="column" borderStyle="single" borderColor="ansi:cyan" paddingX={1} paddingY={0} marginBottom={1}>
-      {rowsList.map((row, y) => (
-        <Box key={y} flexDirection="row">
-          {row.map((cell, x) => {
-            const fgColor = cell.isTextChar ? '#ffffff' : undefined
-            return (
-              <Text
-                key={x}
-                backgroundColor={cell.bgColor as any}
-                color={fgColor as any}
-                bold={cell.isTextChar}
-              >
-                {cell.char}
-              </Text>
-            )
-          })}
+      {/* Sub-label for ultracode */}
+      {subLabel && (
+        <Box marginBottom={0} paddingLeft={Math.max(0, ultracodeIndex * slotWidth)}>
+          <Text dimColor>{subLabel}</Text>
         </Box>
-      ))}
-    </Box>
-  )
-}
-
-function OptionItem({
-  option,
-  isFocused,
-  isCurrent,
-  animationFrame
-}: {
-  option: EffortOption
-  isFocused: boolean
-  isCurrent: boolean
-  animationFrame: number
-}) {
-  const level = option.value as EffortLevel | 'auto'
-  const symbol = level === 'auto' ? '⊘' : effortLevelToSymbol(level)
-
-  if (level === 'ultracode' && isFocused) {
-    const spinnerFrames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
-    const spinner = spinnerFrames[animationFrame % spinnerFrames.length]!
-    
-    return (
-      <Box flexDirection="row">
-        <Text color="cyan" bold={true}>{spinner} </Text>
-        <RainbowText text="ULTRACODE" frame={animationFrame} />
-        <Text color="cyan" bold={true}> {spinner}</Text>
-        {isCurrent && <Text color="success" bold={true}> (current)</Text>}
-      </Box>
-    )
-  }
-
-  const color = isFocused 
-    ? 'suggestion' 
-    : isCurrent 
-      ? 'remember' 
-      : 'subtle'
-
-  const textLabel = level === 'auto' ? 'Auto' : getEffortLevelLabel(level)
-
-  return (
-    <Box flexDirection="row">
-      {isFocused ? (
-        <Text color="suggestion" bold={true}>› </Text>
-      ) : (
-        <Text>  </Text>
       )}
-      <Text color={color}>{symbol} </Text>
-      <Text color={color} bold={isFocused || isCurrent}>
-        {textLabel}
-      </Text>
-      {isCurrent && <Text color={isFocused ? 'suggestion' : 'remember'} dimColor={!isFocused}> (current)</Text>}
+
+      {/* Description */}
+      <Box marginBottom={1}>
+        <Text italic color="cyan">{focused.description}</Text>
+      </Box>
+
+      {/* Keyboard hint */}
+      <Box>
+        <Text dimColor>←/→ to adjust · Enter to confirm · Esc to cancel</Text>
+      </Box>
     </Box>
   )
 }
