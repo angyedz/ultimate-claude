@@ -15,6 +15,7 @@ import {
 } from '../utils/effort.js'
 import { getAPIProvider } from '../utils/model/providers.js'
 import { getReasoningEffortForModel } from '../services/api/providerConfig.js'
+import { getRainbowColor } from '../utils/thinking.js'
 
 type EffortOption = {
   value: string
@@ -89,7 +90,8 @@ export function EffortPicker({ onSelect, onCancel }: Props) {
   const { columns } = useTerminalSize()
   const provider = getAPIProvider()
   const usesOpenAIEffort = modelUsesOpenAIEffort(model)
-  const availableLevels = getAvailableEffortLevels(model)
+  const rawAvailableLevels = getAvailableEffortLevels(model)
+  const availableLevels = Array.from(new Set(rawAvailableLevels.map(lvl => lvl === 'xhigh' ? 'max' : lvl)))
   const currentDisplayedLevel = getDisplayedEffortLevel(model, appStateEffort)
   const supportsEffort = modelSupportsEffort(model)
 
@@ -113,13 +115,14 @@ export function EffortPicker({ onSelect, onCancel }: Props) {
     })
   }
 
-  const initialFocus = usesOpenAIEffort
+  const initialFocusVal = usesOpenAIEffort
     ? (appStateEffort === 'max'
         ? 'xhigh'
         : appStateEffort
           ? String(appStateEffort)
           : (modelReasoningEffort || 'auto'))
     : (appStateEffort ? String(appStateEffort) : 'auto')
+  const initialFocus = initialFocusVal === 'xhigh' ? 'max' : initialFocusVal
 
   const [focusedIndex, setFocusedIndex] = useState(() => {
     const idx = options.findIndex(opt => opt.value === initialFocus)
@@ -244,6 +247,26 @@ export function EffortPicker({ onSelect, onCancel }: Props) {
             ? appStateEffort === undefined
             : currentDisplayedLevel === opt.value
           const label = opt.value
+
+          if (label === 'max') {
+            const labelText = "max"
+            const paddingLength = Math.max(0, slotWidth - labelText.length)
+            const paddedSpaces = " ".repeat(paddingLength)
+            return (
+              <Text key={opt.value} bold={isFocused}>
+                {Array.from(labelText).map((char, charIdx) => {
+                  const colorIdx = (charIdx + frame) % 7
+                  return (
+                    <Text key={charIdx} color={getRainbowColor(colorIdx) as any}>
+                      {char}
+                    </Text>
+                  )
+                })}
+                <Text>{paddedSpaces}</Text>
+              </Text>
+            )
+          }
+
           // Pad to slot width
           const padded = label.slice(0, slotWidth).padEnd(slotWidth)
           let col: string

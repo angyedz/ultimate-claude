@@ -910,16 +910,16 @@ export function resolveAppliedEffort(
   return resolved
 }
 
-/**
- * Resolve the effort level to show the user. Wraps resolveAppliedEffort
- * with the 'high' fallback (what the API uses when no effort param is sent).
- * Single source of truth for the status bar and /effort output (CC-1088).
- */
 export function getDisplayedEffortLevel(
   model: string,
   appStateEffort: EffortValue | undefined,
 ): EffortLevel {
   const resolved = resolveAppliedEffort(model, appStateEffort) ?? 'high'
+  if (appStateEffort === 'ultracode' || appStateEffort === 'max') {
+    if (resolveAppliedEffort(model, appStateEffort) !== undefined) {
+      return appStateEffort
+    }
+  }
   return convertEffortValueToLevel(resolved)
 }
 
@@ -936,7 +936,10 @@ export function getEffortSuffix(
   if (effortValue === undefined) return ''
   const resolved = resolveAppliedEffort(model, effortValue)
   if (resolved === undefined) return ''
-  return ` with ${convertEffortValueToLevel(resolved)} effort`
+  const displayLevel = effortValue === 'ultracode' || effortValue === 'max'
+    ? effortValue
+    : convertEffortValueToLevel(resolved)
+  return ` with ${displayLevel} effort`
 }
 
 export function isValidNumericEffort(value: number): boolean {
