@@ -113,6 +113,29 @@ export const PROVIDER_PRESET_MANIFEST = [
     ]
   },
   {
+    "preset": "cerebras",
+    "routeKind": "gateway",
+    "routeId": "cerebras",
+    "vendorId": "openai",
+    "gatewayId": "cerebras",
+    "description": "Cerebras AI OpenAI-compatible endpoint (fast inference)",
+    "apiKeyEnvVars": [
+      "CEREBRAS_API_KEY"
+    ]
+  },
+  {
+    "preset": "cohere",
+    "routeKind": "gateway",
+    "routeId": "cohere",
+    "vendorId": "openai",
+    "gatewayId": "cohere",
+    "description": "Cohere Command OpenAI-compatible endpoint",
+    "apiKeyEnvVars": [
+      "CO_API_KEY",
+      "COHERE_API_KEY"
+    ]
+  },
+  {
     "preset": "deepseek",
     "routeKind": "vendor",
     "routeId": "deepseek",
@@ -322,6 +345,28 @@ export const PROVIDER_PRESET_MANIFEST = [
     ]
   },
   {
+    "preset": "perplexity",
+    "routeKind": "gateway",
+    "routeId": "perplexity",
+    "vendorId": "openai",
+    "gatewayId": "perplexity",
+    "description": "Perplexity AI OpenAI-compatible endpoint",
+    "apiKeyEnvVars": [
+      "PERPLEXITY_API_KEY"
+    ]
+  },
+  {
+    "preset": "sambanova",
+    "routeKind": "gateway",
+    "routeId": "sambanova",
+    "vendorId": "openai",
+    "gatewayId": "sambanova",
+    "description": "SambaNova AI OpenAI-compatible endpoint",
+    "apiKeyEnvVars": [
+      "SAMBANOVA_API_KEY"
+    ]
+  },
+  {
     "preset": "together",
     "routeKind": "gateway",
     "routeId": "together",
@@ -444,6 +489,8 @@ export const ORDERED_PROVIDER_PRESETS = [
   "atlas-cloud",
   "azure-openai",
   "bankr",
+  "cerebras",
+  "cohere",
   "deepseek",
   "fireworks",
   "gemini",
@@ -462,6 +509,8 @@ export const ORDERED_PROVIDER_PRESETS = [
   "opencode-go",
   "opencode",
   "openrouter",
+  "perplexity",
+  "sambanova",
   "together",
   "venice",
   "xai",
