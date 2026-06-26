@@ -1,6 +1,6 @@
 # Ultimate Claude
 
-![Ultimate Claude mascot](https://raw.githubusercontent.com/your-repo/ultimate-claude/main/assets/mascot.png)
+![Ultimate Claude mascot](https://raw.githubusercontent.com/angyedz/ultimate-claude/main/assets/mascot.png)
 
 ## Overview
 
