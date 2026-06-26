@@ -5,8 +5,8 @@ import {
 } from '../history.js'
 import instances from '../ink/instances.js'
 import type { PastedContent } from './config.js'
+import { spawnSync } from 'child_process'
 import { classifyGuiEditor, getExternalEditor } from './editor.js'
-import { execSync_DEPRECATED } from './execSyncWrapper.js'
 import { getFsImplementation } from './fsOperations.js'
 import { toIDEDisplayName } from './ide.js'
 import { writeFileSync_DEPRECATED } from './slowOperations.js'
@@ -66,9 +66,20 @@ export function editFileInEditor(filePath: string): EditorResult {
   try {
     // Use override command if available, otherwise use the editor as-is
     const editorCommand = EDITOR_OVERRIDES[editor] ?? editor
-    execSync_DEPRECATED(`${editorCommand} "${filePath}"`, {
-      stdio: 'inherit',
-    })
+    const parts = editorCommand.split(' ')
+    const base = parts[0] ?? editorCommand
+    const editorArgs = parts.slice(1)
+
+    if (process.platform === 'win32') {
+      spawnSync(`${editorCommand} "${filePath}"`, {
+        stdio: 'inherit',
+        shell: true,
+      })
+    } else {
+      spawnSync(base, [...editorArgs, filePath], {
+        stdio: 'inherit',
+      })
+    }
 
     // Read the edited content
     const editedContent = fs.readFileSync(filePath, { encoding: 'utf-8' })
