@@ -175,8 +175,8 @@ export function EffortPicker({ onSelect, onCancel }: Props) {
   const purpleStartCol = purpleStartIndex * slotWidth
   const purpleWidth = sliderWidth - purpleStartCol
 
-  // Triangle indicator column (center of focused slot)
-  const indicatorCol = focusedIndex * slotWidth + Math.floor(slotWidth / 2)
+  // Triangle indicator column (centered on the focused option text)
+  const indicatorCol = focusedIndex * slotWidth + Math.floor(focused.value.length / 2)
 
   // Height of the wave block area (rows above the line)
   const WAVE_HEIGHT = 3
