@@ -21,7 +21,9 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 agent.log
-plan/
+# Ignore Claude plan artifacts at the repo root only (not src/commands/plan/ source code)
+/plan/
+!src/commands/plan/
 .tmp
 .tmp-*
 temp_reference/
