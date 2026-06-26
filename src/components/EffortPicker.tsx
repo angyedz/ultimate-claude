@@ -221,26 +221,19 @@ export function EffortPicker({ onSelect, onCancel }: Props) {
         </Box>
       </Box>
 
-      {/* Triangle indicator row — sits just above the slider line */}
-      <Box flexDirection="row" width={sliderWidth}>
-        {Array.from({ length: sliderWidth }, (_, x) => {
-          const isTriangle = x === indicatorCol
-          if (isTriangle) {
-            return <Text key={x} color="white" bold>▲</Text>
-          }
-          // In the purple zone? Color it
-          if (x >= purpleStartCol) {
-            return <WaveCell key={x} x={x - purpleStartCol} frame={frame} char=" " />
-          }
-          return <Text key={x}> </Text>
-        })}
-      </Box>
-
       {/* Horizontal line */}
       <Box flexDirection="row" width={sliderWidth}>
         {Array.from({ length: sliderWidth }, (_, x) => (
           <Text key={x} dimColor>─</Text>
         ))}
+      </Box>
+
+      {/* Triangle indicator row — sits just below the slider line, pointing at option name */}
+      <Box flexDirection="row" width={sliderWidth}>
+        {Array.from({ length: sliderWidth }, (_, x) => {
+          const isTriangle = x === indicatorCol
+          return <Text key={x} color={isTriangle ? 'white' : undefined} bold={isTriangle}>{isTriangle ? '▲' : ' '}</Text>
+        })}
       </Box>
 
       {/* Option labels row */}
