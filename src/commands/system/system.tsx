@@ -144,7 +144,7 @@ async function saveCustomPersona(name: string, prompt: string): Promise<void> {
   await writeFile(join(dir, `${sanitizedName}.txt`), prompt, 'utf8');
 }
 
-type ScreenState = 'main' | 'builtin' | 'custom' | 'save' | 'sections';
+type ScreenState = 'main' | 'builtin' | 'custom' | 'save' | 'sections' | 'section_actions';
 
 type Props = {
   onDone: LocalJSXCommandOnDone;
@@ -157,6 +157,7 @@ function SystemPromptManager({ onDone, context }: Props) {
   const [saveName, setSaveName] = useState('');
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [outputStyleConfig, setOutputStyleConfig] = useState<any>(null);
+  const [selectedSection, setSelectedSection] = useState<any>(null);
 
   const appState = context.getAppState();
   const currentCustom = appState.customSystemPrompt;
@@ -300,21 +301,49 @@ function SystemPromptManager({ onDone, context }: Props) {
     }
     const section = SECTIONS.find(s => s.name === val);
     if (section) {
+      setSelectedSection(section);
+      setScreen('section_actions');
+    }
+  };
+
+  const handleSelectSectionAction = async (val: string) => {
+    if (val === 'back') {
+      setScreen('sections');
+      return;
+    }
+    if (val === 'edit' && selectedSection) {
       try {
-        const defaultText = section.getDefault({ outputStyleConfig, enabledTools });
-        const currentText = getSectionContent(section.name, defaultText);
+        const defaultText = selectedSection.getDefault({ outputStyleConfig, enabledTools });
+        const currentText = getSectionContent(selectedSection.name, defaultText);
         const result = editPromptInEditor(currentText);
         if (result.content !== null) {
-          await saveSectionContent(section.name, result.content);
+          await saveSectionContent(selectedSection.name, result.content);
           if (!result.content.trim()) {
-            setStatusMessage(`Reset section "${section.name}" to default`);
+            setStatusMessage(`Reset section "${selectedSection.name}" to default`);
           } else {
-            setStatusMessage(`Updated section "${section.name}" successfully`);
+            setStatusMessage(`Updated section "${selectedSection.name}" successfully`);
           }
         }
       } catch (err) {
         setStatusMessage(`Error: ${err}`);
       }
+      setScreen('sections');
+      return;
+    }
+    if (val === 'reset' && selectedSection) {
+      try {
+        const filePath = join(getSystemPromptsDir(), `${selectedSection.name}.txt`);
+        if (existsSync(filePath)) {
+          await unlink(filePath);
+          setStatusMessage(`Reset section "${selectedSection.name}" to default`);
+        } else {
+          setStatusMessage(`Section "${selectedSection.name}" is already at its default state`);
+        }
+      } catch (err) {
+        setStatusMessage(`Error resetting section: ${err}`);
+      }
+      setScreen('sections');
+      return;
     }
   };
 
@@ -392,6 +421,20 @@ function SystemPromptManager({ onDone, context }: Props) {
     return (
       <Dialog title="Edit System Prompt Sections" subtitle={getSectionsSubtitle()} onCancel={() => setScreen('main')} color="permission" showNavigationHint>
         <Select options={sectionOptions} onChange={handleSelectSection} onCancel={() => setScreen('main')} />
+      </Dialog>
+    );
+  }
+
+  if (screen === 'section_actions' && selectedSection) {
+    const isOverridden = existsSync(join(getSystemPromptsDir(), `${selectedSection.name}.txt`));
+    const actionsOptions = [
+      { value: 'edit', label: 'Edit instructions' },
+      { value: 'reset', label: 'Reset to default' },
+      { value: 'back', label: 'Back' }
+    ];
+    return (
+      <Dialog title={`Manage Section: ${selectedSection.label}`} subtitle={isOverridden ? 'Modified (custom override is active)' : 'Default (using builtin instructions)'} onCancel={() => setScreen('sections')} color="permission" showNavigationHint>
+        <Select options={actionsOptions} onChange={handleSelectSectionAction} onCancel={() => setScreen('sections')} />
       </Dialog>
     );
   }
