@@ -5,6 +5,7 @@ const config = {
   type: 'local-jsx',
   name: 'config',
   description: 'Open config panel',
+  immediate: true,
   load: () => import('./config.js'),
 } satisfies Command
 

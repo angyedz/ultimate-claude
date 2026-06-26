@@ -6,6 +6,7 @@ const session = {
   name: 'session',
   aliases: ['remote'],
   description: 'Manage active and past sessions',
+  immediate: true,
   load: () => import('./session.js'),
 } satisfies Command
 

@@ -4,6 +4,7 @@ const memory: Command = {
   type: 'local-jsx',
   name: 'memory',
   description: 'Edit Claude memory files',
+  immediate: true,
   load: () => import('./memory.js'),
 }
 

@@ -5,6 +5,7 @@ const systemReset: Command = {
   name: 'system-reset',
   description: 'Restore any system prompt section or all prompts to default',
   argumentHint: '[all | section-name]',
+  immediate: true,
   load: () => import('./system-reset.js'),
 }
 
