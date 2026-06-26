@@ -574,12 +574,10 @@ function terminalDoneMessage(state: UpdateState): {
 export async function call(
   onDone: (result: string, options?: { display?: CommandResultDisplay }) => void,
   _context: unknown,
-  args: string,
+  _args: string,
 ): Promise<React.ReactNode> {
-  const tokens = (args ?? '').trim().split(/\s+/).filter(Boolean)
-  const force = tokens.includes('--force')
-  const nonFlag = tokens.filter(token => !token.startsWith('--'))
-  const target = nonFlag[0] || 'latest'
+  const force = false
+  const target = 'latest'
 
   const { unmount } = await render(
     <Update

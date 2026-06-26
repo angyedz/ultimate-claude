@@ -4,7 +4,6 @@ const update = {
   type: 'local-jsx',
   name: 'update',
   description: 'Update Claude Code to the latest version',
-  argumentHint: '[latest|stable|<version>] [--force]',
   load: () => import('./update.js'),
 } satisfies Command
 
