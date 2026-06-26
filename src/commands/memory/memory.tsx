@@ -1,6 +1,6 @@
-import { mkdir, writeFile, unlink } from 'fs/promises';
+import { mkdir, writeFile, unlink, readFile } from 'fs/promises';
 import { existsSync } from 'fs';
-import { basename } from 'path';
+import { basename, join } from 'path';
 import * as React from 'react';
 import { useState } from 'react';
 import type { CommandResultDisplay } from '../../commands.js';
@@ -15,6 +15,7 @@ import { getErrnoCode } from '../../utils/errors.js';
 import { logError } from '../../utils/log.js';
 import { editFileInEditor } from '../../utils/promptEditor.js';
 import { Select } from '../../components/CustomSelect/index.js';
+import { getOriginalCwd } from '../../bootstrap/state.js';
 
 function MemoryCommand({
   onDone
@@ -159,8 +160,142 @@ function MemoryCommand({
   return null;
 }
 
-export const call: LocalJSXCommandCall = async onDone => {
+export const call: LocalJSXCommandCall = async (onDone, _context, args) => {
   clearMemoryFileCaches();
-  await getMemoryFiles();
+  const existingMemoryFiles = await getMemoryFiles();
+
+  args = args?.trim() || '';
+  if (args.toLowerCase() === 'help' || args.toLowerCase() === '-h' || args.toLowerCase() === '--help') {
+    onDone(
+      `Usage: /memory [action] [file]\n\n` +
+      `Actions:\n` +
+      `  - /memory              : Open the interactive memory selector dialog\n` +
+      `  - /memory list         : List all memory files, paths, and status\n` +
+      `  - /memory edit [file]  : Edit a memory file (user or project) in your terminal editor\n` +
+      `  - /memory show [file]  : Display the contents of a memory file\n` +
+      `  - /memory clear [file] : Delete/reset a memory file\n\n` +
+      `File values can be 'user', 'project', or a specific filename (e.g. 'CLAUDE.md').`
+    );
+    return;
+  }
+
+  const parts = args.split(/\s+/).filter(Boolean);
+  if (parts.length > 0) {
+    const action = parts[0]!.toLowerCase();
+    const targetFile = parts[1]?.toLowerCase();
+
+    // Resolve target path helper
+    const resolveTargetPath = (target: string | undefined): string | null => {
+      const userPath = join(getClaudeConfigHomeDir(), 'CLAUDE.md');
+      const projectPath = join(getOriginalCwd(), 'CLAUDE.md');
+
+      if (!target || target === 'user') {
+        return userPath;
+      }
+      if (target === 'project') {
+        return projectPath;
+      }
+      // Look for a match in existing files
+      const match = existingMemoryFiles.find(
+        f => basename(f.path).toLowerCase() === target || f.path.toLowerCase().includes(target)
+      );
+      if (match) {
+        return match.path;
+      }
+      return null;
+    };
+
+    if (action === 'list') {
+      const userPath = join(getClaudeConfigHomeDir(), 'CLAUDE.md');
+      const projectPath = join(getOriginalCwd(), 'CLAUDE.md');
+      const listLines = [
+        `User Memory (global config):`,
+        `  Path: ${userPath}`,
+        `  Exists: ${existsSync(userPath) ? 'Yes' : 'No (new)'}`,
+        ``,
+        `Project Memory (workspace root):`,
+        `  Path: ${projectPath}`,
+        `  Exists: ${existsSync(projectPath) ? 'Yes' : 'No (new)'}`,
+      ];
+      if (existingMemoryFiles.length > 0) {
+        const others = existingMemoryFiles.filter(f => f.path !== userPath && f.path !== projectPath);
+        if (others.length > 0) {
+          listLines.push(``, `Other memories:`);
+          for (const f of others) {
+            listLines.push(`  - ${basename(f.path)}: ${f.path}`);
+          }
+        }
+      }
+      onDone(listLines.join('\n'));
+      return;
+    }
+
+    if (action === 'edit') {
+      const path = resolveTargetPath(targetFile);
+      if (!path) {
+        onDone(`Error: Could not resolve memory file target '${targetFile || 'user'}'`);
+        return;
+      }
+      try {
+        if (path.includes(getClaudeConfigHomeDir())) {
+          await mkdir(getClaudeConfigHomeDir(), { recursive: true });
+        }
+        try {
+          await writeFile(path, '', { encoding: 'utf8', flag: 'wx' });
+        } catch (e: unknown) {
+          if (getErrnoCode(e) !== 'EEXIST') {
+            throw e;
+          }
+        }
+        await editFileInEditor(path);
+        onDone(`Opened memory file at ${getRelativeMemoryPath(path)} for editing.`);
+      } catch (err) {
+        onDone(`Error editing memory file: ${err}`);
+      }
+      return;
+    }
+
+    if (action === 'show' || action === 'view') {
+      const path = resolveTargetPath(targetFile || 'user');
+      if (!path) {
+        onDone(`Error: Could not resolve memory file target '${targetFile || 'user'}'`);
+        return;
+      }
+      if (!existsSync(path)) {
+        onDone(`Memory file does not exist yet: ${getRelativeMemoryPath(path)}`);
+        return;
+      }
+      try {
+        const content = await readFile(path, 'utf8');
+        onDone(`--- ${basename(path)} ---\n${content || '(Empty memory file)'}\n---`);
+      } catch (err) {
+        onDone(`Error reading memory file: ${err}`);
+      }
+      return;
+    }
+
+    if (action === 'clear' || action === 'reset' || action === 'delete') {
+      const path = resolveTargetPath(targetFile);
+      if (!path) {
+        onDone(`Error: Could not resolve memory file target '${targetFile || 'user'}'`);
+        return;
+      }
+      if (!existsSync(path)) {
+        onDone(`Memory file does not exist: ${getRelativeMemoryPath(path)}`);
+        return;
+      }
+      try {
+        await unlink(path);
+        onDone(`Memory file deleted/reset successfully: ${getRelativeMemoryPath(path)}`);
+      } catch (err) {
+        onDone(`Error deleting memory file: ${err}`);
+      }
+      return;
+    }
+
+    onDone(`Unknown memory command action: ${action}. Type '/memory --help' for usage.`);
+    return;
+  }
+
   return <MemoryCommand onDone={onDone} />;
 };
