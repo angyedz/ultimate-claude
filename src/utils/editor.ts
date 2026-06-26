@@ -177,7 +177,9 @@ export const getExternalEditor = memoize((): string | undefined => {
     return 'start /wait notepad'
   }
 
-  // Search for available editors in order of preference
-  const editors = ['code', 'vi', 'nano']
+  // Search for available editors in order of preference.
+  // Prefer nano over vi/vim for terminal fallback because vi/vim modal editing
+  // confuses users who don't know it, preventing them from typing or pasting.
+  const editors = ['code', 'nano', 'vi']
   return editors.find(command => isCommandAvailable(command))
 })

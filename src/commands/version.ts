@@ -1,11 +1,12 @@
 import type { Command, LocalCommandCall } from '../types/command.js'
 
 const call: LocalCommandCall = async () => {
+  const displayVer = MACRO.DISPLAY_VERSION ?? MACRO.VERSION
   return {
     type: 'text',
     value: MACRO.BUILD_TIME
-      ? `${MACRO.VERSION} (built ${MACRO.BUILD_TIME})`
-      : MACRO.VERSION,
+      ? `${displayVer} (based on Claude Code 0.20.1, built ${MACRO.BUILD_TIME})`
+      : `${displayVer} (based on Claude Code 0.20.1)`,
   }
 }
 

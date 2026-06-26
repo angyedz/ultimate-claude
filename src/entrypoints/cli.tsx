@@ -151,7 +151,7 @@ export async function main(
   if (args.length === 1 && (args[0] === '--version' || args[0] === '-v' || args[0] === '-V')) {
     // MACRO.VERSION is inlined at build time
     // biome-ignore lint/suspicious/noConsole:: intentional console output
-    console.log(`${MACRO.DISPLAY_VERSION ?? MACRO.VERSION} (Claude Code)`);
+    console.log(`${MACRO.DISPLAY_VERSION ?? MACRO.VERSION} (based on Claude Code 0.20.1)`);
     return;
   }
 
