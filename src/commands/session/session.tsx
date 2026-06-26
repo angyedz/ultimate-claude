@@ -1,139 +1,329 @@
-import { c as _c } from "react-compiler-runtime";
 import { toString as qrToString } from 'qrcode';
 import * as React from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Pane } from '../../components/design-system/Pane.js';
+import { Dialog } from '../../components/design-system/Dialog.js';
+import { Select } from '../../components/CustomSelect/index.js';
+import { LogSelector } from '../../components/LogSelector.js';
 import { Box, Text } from '../../ink.js';
 import { useKeybinding } from '../../keybindings/useKeybinding.js';
 import { useAppState } from '../../state/AppState.js';
 import type { LocalJSXCommandCall } from '../../types/command.js';
 import { logForDebugging } from '../../utils/debug.js';
+import { getIsRemoteMode, getOriginalCwd, getSessionId } from '../../bootstrap/state.js';
+import { clearConversation } from '../clear/conversation.js';
+import { loadSameRepoMessageLogs, getSessionIdFromLog, isLiteLog, loadFullLog, getTranscriptPathForSession } from '../../utils/sessionStorage.js';
+import { getWorktreePaths } from '../../utils/getWorktreePaths.js';
+import { validateUuid } from '../../utils/uuid.js';
+import { useTerminalSize } from '../../hooks/useTerminalSize.js';
+import { useIsInsideModal } from '../../context/modalContext.js';
+import { agenticSessionSearch } from '../../utils/agenticSessionSearch.js';
+import { checkCrossProjectResume } from '../../utils/crossProjectResume.js';
+import { setClipboard } from '../../ink/termio/osc.js';
+import { existsSync } from 'fs';
+import { unlink } from 'fs/promises';
+import { logError } from '../../utils/log.js';
+import type { LogOption } from '../../types/logs.js';
+
 type Props = {
   onDone: () => void;
 };
-function SessionInfo(t0) {
-  const $ = _c(19);
-  const {
-    onDone
-  } = t0;
-  const remoteSessionUrl = useAppState(_temp);
+
+function SessionInfo({ onDone }: Props) {
+  const remoteSessionUrl = useAppState(s => s.remoteSessionUrl);
   const [qrCode, setQrCode] = useState("");
-  let t1;
-  let t2;
-  if ($[0] !== remoteSessionUrl) {
-    t1 = () => {
-      if (!remoteSessionUrl) {
-        return;
-      }
-      const url = remoteSessionUrl;
-      const generateQRCode = async function generateQRCode() {
-        const qr = await qrToString(url, {
+
+  useEffect(() => {
+    if (!remoteSessionUrl) {
+      return;
+    }
+    const generateQRCode = async () => {
+      try {
+        const qr = await qrToString(remoteSessionUrl, {
           type: "utf8",
           errorCorrectionLevel: "L"
         });
         setQrCode(qr);
-      };
-      generateQRCode().catch(_temp2);
+      } catch (e) {
+        logForDebugging("QR code generation failed: " + (e instanceof Error ? e.message : String(e)));
+      }
     };
-    t2 = [remoteSessionUrl];
-    $[0] = remoteSessionUrl;
-    $[1] = t1;
-    $[2] = t2;
-  } else {
-    t1 = $[1];
-    t2 = $[2];
-  }
-  useEffect(t1, t2);
-  let t3;
-  if ($[3] === Symbol.for("react.memo_cache_sentinel")) {
-    t3 = {
-      context: "Confirmation"
-    };
-    $[3] = t3;
-  } else {
-    t3 = $[3];
-  }
-  useKeybinding("confirm:no", onDone, t3);
+    generateQRCode();
+  }, [remoteSessionUrl]);
+
+  useKeybinding("confirm:no", onDone, { context: "Confirmation" });
+
   if (!remoteSessionUrl) {
-    let t4;
-    if ($[4] === Symbol.for("react.memo_cache_sentinel")) {
-      t4 = <Pane><Text color="warning">Not in remote mode. Start with `ultimate-claude --remote` to use this command.</Text><Text dimColor={true}>(press esc to close)</Text></Pane>;
-      $[4] = t4;
-    } else {
-      t4 = $[4];
+    return (
+      <Pane>
+        <Text color="warning">Not in remote mode. Start with `ultimate-claude --remote` to use this command.</Text>
+        <Text dimColor={true}>(press esc to close)</Text>
+      </Pane>
+    );
+  }
+
+  const lines = qrCode.split("\n").filter(line => line.length > 0);
+  const isLoading = lines.length === 0;
+
+  return (
+    <Pane>
+      <Box marginBottom={1}>
+        <Text bold={true}>Remote session</Text>
+      </Box>
+      {isLoading ? (
+        <Text dimColor={true}>Generating QR code…</Text>
+      ) : (
+        lines.map((line, i) => <Text key={i}>{line}</Text>)
+      )}
+      <Box marginTop={1}>
+        <Text dimColor={true}>Open in browser: </Text>
+        <Text color="ide">{remoteSessionUrl}</Text>
+      </Box>
+      <Box marginTop={1}>
+        <Text dimColor={true}>(press esc to close)</Text>
+      </Box>
+    </Pane>
+  );
+}
+
+type LocalSessionScreen = 'main' | 'new_confirm' | 'resume_select' | 'delete_select' | 'delete_confirm';
+
+function LocalSessionManager({
+  onDone,
+  context
+}: {
+  onDone: (result?: string, options?: any) => void;
+  context: any;
+}) {
+  const [screen, setScreen] = useState<LocalSessionScreen>('main');
+  const [logs, setLogs] = useState<LogOption[]>([]);
+  const [worktreePaths, setWorktreePaths] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [selectedLog, setSelectedLog] = useState<LogOption | null>(null);
+  
+  const { rows } = useTerminalSize();
+  const insideModal = useIsInsideModal();
+
+  const loadLogs = useCallback(async (paths: string[]) => {
+    setLoading(true);
+    try {
+      const allLogs = await loadSameRepoMessageLogs(paths);
+      const currentSessionId = getSessionId();
+      const filtered = allLogs.filter(l => !l.isSidechain && getSessionIdFromLog(l) !== currentSessionId);
+      setLogs(filtered);
+    } catch (err) {
+      setStatusMessage('Failed to load sessions list');
+    } finally {
+      setLoading(false);
     }
-    return t4;
-  }
-  let T0;
-  let t4;
-  let t5;
-  if ($[5] !== qrCode) {
-    const lines = qrCode.split("\n").filter(_temp3);
-    const isLoading = lines.length === 0;
-    T0 = Pane;
-    if ($[9] === Symbol.for("react.memo_cache_sentinel")) {
-      t4 = <Box marginBottom={1}><Text bold={true}>Remote session</Text></Box>;
-      $[9] = t4;
-    } else {
-      t4 = $[9];
+  }, []);
+
+  useEffect(() => {
+    if (screen === 'resume_select' || screen === 'delete_select') {
+      async function init() {
+        const paths = await getWorktreePaths(getOriginalCwd());
+        setWorktreePaths(paths);
+        await loadLogs(paths);
+      }
+      init();
     }
-    t5 = isLoading ? <Text dimColor={true}>Generating QR code…</Text> : lines.map(_temp4);
-    $[5] = qrCode;
-    $[6] = T0;
-    $[7] = t4;
-    $[8] = t5;
-  } else {
-    T0 = $[6];
-    t4 = $[7];
-    t5 = $[8];
+  }, [screen, loadLogs]);
+
+  const handleSelectMain = (val: string) => {
+    if (val === 'cancel') {
+      onDone('Session manager closed');
+      return;
+    }
+    if (val === 'new') {
+      setScreen('new_confirm');
+      return;
+    }
+    if (val === 'resume') {
+      setScreen('resume_select');
+      return;
+    }
+    if (val === 'delete') {
+      setScreen('delete_select');
+      return;
+    }
+  };
+
+  const handleConfirmNew = async (val: string) => {
+    if (val === 'yes') {
+      try {
+        await clearConversation({
+          setMessages: context.setMessages,
+          readFileState: context.readFileState,
+          discoveredSkillNames: context.discoveredSkillNames,
+          loadedNestedMemoryPaths: context.loadedNestedMemoryPaths,
+          getAppState: context.getAppState,
+          setAppState: context.setAppState,
+        });
+        onDone('Started a new conversation session.');
+      } catch (err) {
+        onDone(`Error starting new session: ${err}`);
+      }
+    } else {
+      setScreen('main');
+    }
+  };
+
+  const handleSelectLogResume = async (log: LogOption) => {
+    const sessionId = validateUuid(getSessionIdFromLog(log));
+    if (!sessionId) {
+      setStatusMessage('Failed to parse session ID');
+      return;
+    }
+
+    try {
+      const fullLog = isLiteLog(log) ? await loadFullLog(log) : log;
+      const crossProjectCheck = checkCrossProjectResume(fullLog, false, worktreePaths);
+      if (crossProjectCheck.isCrossProject && !crossProjectCheck.isSameRepoWorktree) {
+        const raw = await setClipboard(crossProjectCheck.command);
+        if (raw) process.stdout.write(raw);
+        onDone(`This session is from a different project directory. Run: ${crossProjectCheck.command} (copied to clipboard)`);
+        return;
+      }
+
+      await context.resume?.(sessionId, fullLog, 'slash_command_picker');
+      onDone(undefined, { display: 'skip' });
+    } catch (err) {
+      logError(err as Error);
+      setStatusMessage(`Failed to resume: ${(err as Error).message}`);
+    }
+  };
+
+  const handleSelectLogDelete = (log: LogOption) => {
+    setSelectedLog(log);
+    setScreen('delete_confirm');
+  };
+
+  const handleConfirmDelete = async (val: string) => {
+    if (val === 'yes' && selectedLog) {
+      const sessionId = getSessionIdFromLog(selectedLog);
+      if (sessionId) {
+        try {
+          const filePath = selectedLog.fullPath ?? getTranscriptPathForSession(sessionId);
+          if (existsSync(filePath)) {
+            await unlink(filePath);
+          }
+          const replayPath = filePath.replace('.jsonl', '.replay.json');
+          if (existsSync(replayPath)) {
+            await unlink(replayPath);
+          }
+          const todoPath = filePath.replace('.jsonl', '.todo.json');
+          if (existsSync(todoPath)) {
+            await unlink(todoPath);
+          }
+          setStatusMessage(`Session deleted successfully`);
+        } catch (err) {
+          setStatusMessage(`Error deleting session: ${err}`);
+        }
+      }
+      setSelectedLog(null);
+      setScreen('main');
+    } else {
+      setSelectedLog(null);
+      setScreen('main');
+    }
+  };
+
+  if (screen === 'main') {
+    const options = [
+      { value: 'new', label: 'Start a new conversation session' },
+      { value: 'resume', label: 'Resume a past conversation session' },
+      { value: 'delete', label: 'Delete a past conversation session' },
+      { value: 'cancel', label: 'Cancel' }
+    ];
+    return (
+      <Dialog title="Session Manager" subtitle={statusMessage || `Active Session: ${getSessionId()}`} onCancel={() => onDone('Session manager closed')} color="permission" showNavigationHint>
+        <Select options={options} onChange={handleSelectMain} onCancel={() => onDone('Session manager closed')} />
+      </Dialog>
+    );
   }
-  let t6;
-  if ($[10] === Symbol.for("react.memo_cache_sentinel")) {
-    t6 = <Text dimColor={true}>Open in browser: </Text>;
-    $[10] = t6;
-  } else {
-    t6 = $[10];
+
+  if (screen === 'new_confirm') {
+    return (
+      <Dialog title="Start New Session?" subtitle="This will clear your current conversation history and start fresh. Proceed?" onCancel={() => setScreen('main')} color="permission" showNavigationHint>
+        <Select
+          options={[
+            { value: 'yes', label: 'Yes, start new session' },
+            { value: 'no', label: 'No, cancel' }
+          ]}
+          onChange={handleConfirmNew}
+          onCancel={() => setScreen('main')}
+        />
+      </Dialog>
+    );
   }
-  let t7;
-  if ($[11] !== remoteSessionUrl) {
-    t7 = <Box marginTop={1}>{t6}<Text color="ide">{remoteSessionUrl}</Text></Box>;
-    $[11] = remoteSessionUrl;
-    $[12] = t7;
-  } else {
-    t7 = $[12];
+
+  if (screen === 'resume_select') {
+    if (loading) {
+      return (
+        <Dialog title="Resume Session" subtitle="Loading sessions list..." onCancel={() => setScreen('main')} color="permission">
+          <Text dimColor>Loading past sessions...</Text>
+        </Dialog>
+      );
+    }
+    return (
+      <LogSelector
+        logs={logs}
+        maxHeight={insideModal ? Math.floor(rows / 2) : rows - 2}
+        onCancel={() => setScreen('main')}
+        onSelect={handleSelectLogResume}
+        onLogsChanged={() => loadLogs(worktreePaths)}
+        showAllProjects={false}
+        onToggleAllProjects={() => {}}
+        onAgenticSearch={agenticSessionSearch}
+      />
+    );
   }
-  let t8;
-  if ($[13] === Symbol.for("react.memo_cache_sentinel")) {
-    t8 = <Box marginTop={1}><Text dimColor={true}>(press esc to close)</Text></Box>;
-    $[13] = t8;
-  } else {
-    t8 = $[13];
+
+  if (screen === 'delete_select') {
+    if (loading) {
+      return (
+        <Dialog title="Delete Session" subtitle="Loading sessions list..." onCancel={() => setScreen('main')} color="permission">
+          <Text dimColor>Loading past sessions...</Text>
+        </Dialog>
+      );
+    }
+    return (
+      <LogSelector
+        logs={logs}
+        maxHeight={insideModal ? Math.floor(rows / 2) : rows - 2}
+        onCancel={() => setScreen('main')}
+        onSelect={handleSelectLogDelete}
+        onLogsChanged={() => loadLogs(worktreePaths)}
+        showAllProjects={false}
+        onToggleAllProjects={() => {}}
+        onAgenticSearch={agenticSessionSearch}
+      />
+    );
   }
-  let t9;
-  if ($[14] !== T0 || $[15] !== t4 || $[16] !== t5 || $[17] !== t7) {
-    t9 = <T0>{t4}{t5}{t7}{t8}</T0>;
-    $[14] = T0;
-    $[15] = t4;
-    $[16] = t5;
-    $[17] = t7;
-    $[18] = t9;
-  } else {
-    t9 = $[18];
+
+  if (screen === 'delete_confirm') {
+    const title = selectedLog?.customTitle || selectedLog?.firstPrompt || 'Untitled Session';
+    return (
+      <Dialog title="Confirm Delete Session" subtitle={`Are you sure you want to delete the session: "${title.substring(0, 50)}..."? This cannot be undone.`} onCancel={() => setScreen('main')} color="permission" showNavigationHint>
+        <Select
+          options={[
+            { value: 'yes', label: 'Yes, permanently delete' },
+            { value: 'no', label: 'No, keep it' }
+          ]}
+          onChange={handleConfirmDelete}
+          onCancel={() => setScreen('main')}
+        />
+      </Dialog>
+    );
   }
-  return t9;
+
+  return null;
 }
-function _temp4(line_0, i) {
-  return <Text key={i}>{line_0}</Text>;
-}
-function _temp3(line) {
-  return line.length > 0;
-}
-function _temp2(e) {
-  logForDebugging("QR code generation failed", e);
-}
-function _temp(s) {
-  return s.remoteSessionUrl;
-}
-export const call: LocalJSXCommandCall = async onDone => {
-  return <SessionInfo onDone={onDone} />;
+
+export const call: LocalJSXCommandCall = async (onDone, context) => {
+  if (getIsRemoteMode()) {
+    return <SessionInfo onDone={onDone} />;
+  }
+  return <LocalSessionManager onDone={onDone} context={context} />;
 };

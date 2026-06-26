@@ -71,6 +71,7 @@ import terminalSetup from './commands/terminalSetup/index.js'
 import usage from './commands/usage/index.js'
 import theme from './commands/theme/index.js'
 import system from './commands/system/index.js'
+import systemReset from './commands/system-reset/index.js'
 import logo from './commands/logo/index.js'
 import vim from './commands/vim/index.js'
 import { feature } from 'bun:bundle'
@@ -337,6 +338,7 @@ const COMMANDS = memoize((): Command[] => [
   status,
   statusline,
   system,
+  systemReset,
   stickers,
   tag,
   theme,

@@ -260,7 +260,7 @@ export function LogoV2() {
   }
   const layoutMode = getLayoutMode(columns);
   const userTheme = resolveThemeSetting(getGlobalConfig().theme);
-  const borderTitle = ` ${color("claude", userTheme)("Ultimate Claude")} ${color("inactive", userTheme)(`custom ${version} (based on Claude Code v${version})`)} `;
+  const borderTitle = ` ${color("claude", userTheme)("Ultimate Claude")} ${color("inactive", userTheme)(`custom ${version} (based on Claude Code 0.20.1)`)} `;
   const compactBorderTitle = color("claude", userTheme)(" Ultimate Claude ");
   if (layoutMode === "compact") {
     let welcomeMessage = formatWelcomeMessage(username);
