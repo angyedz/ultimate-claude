@@ -1,0 +1,235 @@
+{
+  "name": "ultimate-claude-vscode",
+  "displayName": "Claude Code",
+  "description": "Practical VS Code companion for Claude Code with project-aware launch, Control Center, optional Microsoft Foundry / Azure OpenAI terminal env, and chat.",
+  "version": "0.2.0",
+  "publisher": "devnull-bootloader",
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "categories": [
+    "Themes",
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished",
+    "onCommand:ultimate-claude.start",
+    "onCommand:ultimate-claude.startInWorkspaceRoot",
+    "onCommand:ultimate-claude.openDocs",
+    "onCommand:ultimate-claude.openSetupDocs",
+    "onCommand:ultimate-claude.openWorkspaceProfile",
+    "onCommand:ultimate-claude.openControlCenter",
+    "onCommand:ultimate-claude.newChat",
+    "onCommand:ultimate-claude.openChat",
+    "onCommand:ultimate-claude.resumeSession",
+    "onCommand:ultimate-claude.abortChat",
+    "onCommand:ultimate-claude.setAzureApiKey",
+    "onCommand:ultimate-claude.clearAzureApiKey",
+    "onCommand:ultimate-claude.configureAzureChat",
+    "onCommand:ultimate-claude.openAzureSettings",
+    "onView:ultimate-claude.controlCenter",
+    "onView:ultimate-claude.chat"
+  ],
+  "main": "./src/extension.js",
+  "files": [
+    "README.md",
+    "media/**",
+    "src/extension.js",
+    "src/presentation.js",
+    "src/state.js",
+    "src/chat/**",
+    "themes/**"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "ultimate-claude.start",
+        "title": "Claude Code: Launch in Terminal",
+        "category": "Claude Code"
+      },
+      {
+        "command": "ultimate-claude.startInWorkspaceRoot",
+        "title": "Claude Code: Launch in Workspace Root",
+        "category": "Claude Code"
+      },
+      {
+        "command": "ultimate-claude.openDocs",
+        "title": "Claude Code: Open Repository",
+        "category": "Claude Code"
+      },
+      {
+        "command": "ultimate-claude.openSetupDocs",
+        "title": "Claude Code: Open Setup Guide",
+        "category": "Claude Code"
+      },
+      {
+        "command": "ultimate-claude.openWorkspaceProfile",
+        "title": "Claude Code: Open Workspace Profile",
+        "category": "Claude Code"
+      },
+      {
+        "command": "ultimate-claude.openControlCenter",
+        "title": "Claude Code: Open Control Center",
+        "category": "Claude Code"
+      },
+      {
+        "command": "ultimate-claude.newChat",
+        "title": "Claude Code: New Chat",
+        "category": "Claude Code"
+      },
+      {
+        "command": "ultimate-claude.openChat",
+        "title": "Claude Code: Open Chat Panel",
+        "category": "Claude Code"
+      },
+      {
+        "command": "ultimate-claude.resumeSession",
+        "title": "Claude Code: Resume Session",
+        "category": "Claude Code"
+      },
+      {
+        "command": "ultimate-claude.abortChat",
+        "title": "Claude Code: Abort Generation",
+        "category": "Claude Code"
+      },
+      {
+        "command": "ultimate-claude.setAzureApiKey",
+        "title": "Claude Code: Set Azure / Foundry API Key (Secret Storage)",
+        "category": "Claude Code"
+      },
+      {
+        "command": "ultimate-claude.clearAzureApiKey",
+        "title": "Claude Code: Clear Azure / Foundry API Key",
+        "category": "Claude Code"
+      },
+      {
+        "command": "ultimate-claude.configureAzureChat",
+        "title": "Claude Code: Configure Azure / Foundry Chat (wizard)",
+        "category": "Claude Code"
+      },
+      {
+        "command": "ultimate-claude.openAzureSettings",
+        "title": "Claude Code: Open Azure / Foundry Settings",
+        "category": "Claude Code"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "ultimate-claude",
+          "title": "Claude Code",
+          "icon": "media/ultimate-claude.svg"
+        }
+      ]
+    },
+    "views": {
+      "ultimate-claude": [
+        {
+          "id": "ultimate-claude.chat",
+          "name": "Chat",
+          "type": "webview"
+        },
+        {
+          "id": "ultimate-claude.controlCenter",
+          "name": "Control Center",
+          "type": "webview"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "ultimate-claude.openChat",
+        "key": "ctrl+shift+l",
+        "mac": "cmd+shift+l"
+      }
+    ],
+    "configuration": {
+      "title": "Claude Code",
+      "properties": {
+        "ultimate-claude.launchCommand": {
+          "type": "string",
+          "default": "ultimate-claude",
+          "description": "Command run in the integrated terminal when launching Claude Code."
+        },
+        "ultimate-claude.terminalName": {
+          "type": "string",
+          "default": "Claude Code",
+          "description": "Integrated terminal tab name for Claude Code sessions."
+        },
+        "ultimate-claude.useOpenAIShim": {
+          "type": "boolean",
+          "default": false,
+          "description": "Optionally set CLAUDE_CODE_USE_OPENAI=1 in launched Claude Code terminals when Azure injection is off or incomplete."
+        },
+        "ultimate-claude.azure.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "When true, launch injects Microsoft Foundry / Azure OpenAI-compatible chat env (OPENAI_* + AZURE_OPENAI_API_VERSION) into the Claude Code terminal."
+        },
+        "ultimate-claude.azure.endpoint": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Azure resource base URL for OpenAI-compatible chat (example: `https://YOUR_RESOURCE.openai.azure.com`). Do not put `api-version` here; use **Claude Code: Azure API Version**."
+        },
+        "ultimate-claude.azure.apiVersion": {
+          "type": "string",
+          "default": "2024-12-01-preview",
+          "description": "Azure API version for chat completions (AZURE_OPENAI_API_VERSION)."
+        },
+        "ultimate-claude.azure.deployment": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Azure deployment name (maps to `OPENAI_MODEL` for the OpenAI shim)."
+        },
+        "ultimate-claude.azure.forceAzureUrlStyle": {
+          "type": "boolean",
+          "default": true,
+          "description": "Sets OPENAI_AZURE_STYLE=1 so deployment URLs and api-key header work on Foundry and non-standard Azure hosts."
+        },
+        "ultimate-claude.azure.apiKey": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Optional API key in settings (not recommended). Prefer **Claude Code: Set Azure / Foundry API Key**. Secret wins if both are set."
+        },
+        "ultimate-claude.permissionMode": {
+          "type": "string",
+          "default": "acceptEdits",
+          "enum": ["default", "acceptEdits", "bypassPermissions", "plan"],
+          "enumDescriptions": [
+            "Prompt for permission on each tool use (requires manual approval)",
+            "Auto-approve file edits, prompt for other operations (recommended)",
+            "Auto-approve all operations without prompting",
+            "Read-only mode — no file modifications allowed"
+          ],
+          "description": "Permission mode for chat sessions. Controls which tool operations are auto-approved."
+        }
+      }
+    },
+    "themes": [
+      {
+        "label": "Claude Code Terminal Black",
+        "uiTheme": "vs-dark",
+        "path": "./themes/UltimateClaude-Terminal-Black.json"
+      }
+    ]
+  },
+  "scripts": {
+    "test": "bun test src",
+    "lint": "node scripts/lint.js",
+    "package": "npx @vscode/vsce package --no-dependencies"
+  },
+  "keywords": [
+    "ultimate-claude",
+    "terminal",
+    "theme",
+    "cli",
+    "llm",
+    "azure",
+    "foundry"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Gitlawb/ultimate-claude"
+  },
+  "license": "MIT"
+}
