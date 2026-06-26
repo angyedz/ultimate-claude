@@ -61,7 +61,7 @@ export type OpenAIShimThinkingRequestFormat =
 
 export type OpenAIShimReasoningRequestPlan = {
   thinkingType?: 'enabled' | 'disabled'
-  reasoningEffort?: 'low' | 'medium' | 'high' | 'xhigh' | 'max'
+  reasoningEffort?: string
   wireFormat?: ReasoningWireFormat
   source: 'metadata' | 'legacy' | 'compat' | 'none'
 }
@@ -195,15 +195,15 @@ function normalizeReasoningThinkingType(
 }
 
 function normalizeDeepSeekReasoningEffort(
-  effort: 'low' | 'medium' | 'high' | 'xhigh',
+  effort: string,
 ): 'high' | 'max' {
-  return effort === 'xhigh' ? 'max' : 'high'
+  return effort === 'xhigh' || effort === 'max' || effort === 'ultracode' ? 'max' : 'high'
 }
 
 function normalizeZaiReasoningEffort(
-  effort: 'low' | 'medium' | 'high' | 'xhigh',
+  effort: string,
 ): 'high' | 'max' {
-  return effort === 'xhigh' ? 'max' : 'high'
+  return effort === 'xhigh' || effort === 'max' || effort === 'ultracode' ? 'max' : 'high'
 }
 
 function resolveCompatibilityWireFormat(
@@ -559,7 +559,7 @@ export function modelSupportsWireEffort(model: string, context?: ReasoningContro
 
 export function resolveOpenAIShimReasoningRequestPlan(options: {
   model: string
-  requestedEffort?: OpenAIEffortLevel
+  requestedEffort?: string
   requestThinkingType?: string
   defaultThinkingType?: string
   thinkingRequestFormat?: OpenAIShimThinkingRequestFormat
