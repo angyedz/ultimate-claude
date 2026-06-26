@@ -206,6 +206,29 @@ function normalizeZaiReasoningEffort(
   return effort === 'xhigh' || effort === 'max' || effort === 'ultracode' ? 'max' : 'high'
 }
 
+function clampOpenAIReasoningEffort(
+  effort: string | undefined,
+  levels?: EffortLevel[],
+): string | undefined {
+  if (!effort) return undefined
+  if (effort === 'ultracode') {
+    if (levels?.includes('max')) return 'max'
+    if (levels?.includes('xhigh')) return 'xhigh'
+    return 'high'
+  }
+  if (effort === 'max') {
+    if (levels?.includes('max')) return 'max'
+    if (levels?.includes('xhigh')) return 'xhigh'
+    return 'high'
+  }
+  if (effort === 'xhigh') {
+    if (levels?.includes('xhigh')) return 'xhigh'
+    if (levels?.includes('max')) return 'max'
+    return 'high'
+  }
+  return effort
+}
+
 function resolveCompatibilityWireFormat(
   model: string,
   thinkingRequestFormat?: OpenAIShimThinkingRequestFormat,
@@ -635,10 +658,12 @@ export function resolveOpenAIShimReasoningRequestPlan(options: {
     }
   }
 
+  const levels = options.reasoningControl?.levels ?? getAvailableEffortLevels(options.model)
+  const clampedEffort = clampOpenAIReasoningEffort(options.requestedEffort, levels)
   return {
-    reasoningEffort: options.requestedEffort,
-    wireFormat: options.requestedEffort ? 'reasoning_effort' : undefined,
-    source: options.requestedEffort ? 'legacy' : 'none',
+    reasoningEffort: clampedEffort,
+    wireFormat: clampedEffort ? 'reasoning_effort' : undefined,
+    source: clampedEffort ? 'legacy' : 'none',
   }
 }
 // @[MODEL LAUNCH]: Add the new model to the allowlist if it supports 'max' effort.
