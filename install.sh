@@ -1,104 +1,131 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
 # Simple installer for Ultimate Claude on macOS/Linux
-# Requirements: git, curl, Node.js (v18+), npm or bun
+# Requirements: git, curl, Node.js (v22+), npm or bun
 
-# Check for required commands
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+die() { echo "Error: $*" >&2; exit 1; }
+
+# ---------------------------------------------------------------------------
+# Check required commands
+# ---------------------------------------------------------------------------
 for cmd in git curl node; do
-  if ! command -v $cmd >/dev/null 2>&1; then
-    echo "Error: $cmd is not installed. Please install it before proceeding."
-    exit 1
-  fi
+  command -v "$cmd" >/dev/null 2>&1 || die "$cmd is not installed. Please install it before proceeding."
 done
 
-# Detect if we are already inside the repository
-if [ -f "package.json" ] && grep -q "ultimate-claude" package.json; then
+# Node >= 22 required
+NODE_MAJOR=$(node -e "process.stdout.write(String(process.versions.node.split('.')[0]))")
+[ "$NODE_MAJOR" -ge 22 ] || die "Node.js v22+ required (found v$(node --version | tr -d v))"
+
+# ---------------------------------------------------------------------------
+# Clone / pull
+# ---------------------------------------------------------------------------
+if [ -f "package.json" ] && grep -q "ultimate-claude" package.json 2>/dev/null; then
   echo "Detected existing repository – using current directory."
   PROJECT_ROOT="$(pwd)"
 else
-  # Clone repository
   REPO_URL="https://github.com/angyedz/ultimate-claude.git"
   PROJECT_DIR="ultimate-claude"
-  if [ -d "$PROJECT_DIR" ]; then
+
+  if [ -d "$PROJECT_DIR/.git" ]; then
     echo "Directory $PROJECT_DIR already exists. Pulling latest changes..."
     cd "$PROJECT_DIR"
+    git pull
+  elif [ -d "$PROJECT_DIR" ]; then
+    die "Directory '$PROJECT_DIR' exists but is not a git repository. Remove it and re-run."
   else
     git clone "$REPO_URL"
     cd "$PROJECT_DIR"
   fi
-  # Always pull to get the latest commits
-  git pull
+
   PROJECT_ROOT="$(pwd)"
 fi
 
-# Install dependencies (prefer bun for speed, fallback to npm)
+# ---------------------------------------------------------------------------
+# Install dependencies
+# ---------------------------------------------------------------------------
 if command -v bun >/dev/null 2>&1; then
   bun install
 elif command -v npm >/dev/null 2>&1; then
   npm install
 else
-  echo "Neither bun nor npm is available. Please install one of them."
-  exit 1
+  die "Neither bun nor npm is available. Please install one of them."
 fi
 
-# Build the project (creates dist/cli.mjs)
+# ---------------------------------------------------------------------------
+# Build (creates dist/cli.mjs)
+# ---------------------------------------------------------------------------
 if command -v bun >/dev/null 2>&1; then
   bun run build
 else
   npm run build
 fi
 
+[ -f "$PROJECT_ROOT/dist/cli.mjs" ] || die "Build succeeded but dist/cli.mjs is missing."
+
+echo ""
 echo "Installation and build complete."
 
-# Determine bin directory (default to ~/.local/bin)
+# ---------------------------------------------------------------------------
+# Install wrapper to ~/.local/bin
+# IMPORTANT: the heredoc is UNQUOTED (<<EOS) so $PROJECT_ROOT is substituted
+# at install time — the wrapper therefore works from any CWD at runtime.
+# ---------------------------------------------------------------------------
 BIN_DIR="$HOME/.local/bin"
 mkdir -p "$BIN_DIR"
 
-# Create wrapper script.
-# IMPORTANT: bake the absolute PROJECT_ROOT in at install time (via unquoted
-# heredoc EOS) so the wrapper works from any working directory at runtime.
 WRAPPER="$BIN_DIR/ultimate-claude"
 cat > "$WRAPPER" <<EOS
 #!/usr/bin/env bash
-# Absolute path to the ultimate-claude project (recorded at install time)
+# Absolute path to the project — recorded at install time.
 PROJECT_ROOT="${PROJECT_ROOT}"
 
 if [ ! -d "\${PROJECT_ROOT}" ]; then
-  echo "Error: project directory not found: \${PROJECT_ROOT}"
-  echo "Re-run the installer to fix this."
+  echo "ultimate-claude: project directory not found: \${PROJECT_ROOT}" >&2
+  echo "Re-run the installer to fix this." >&2
   exit 1
 fi
 
-# Run the pre-built CLI bundle directly — no npm/bun overhead at launch
-exec node "\${PROJECT_ROOT}/dist/cli.mjs" "\$@"
+if [ ! -f "\${PROJECT_ROOT}/dist/cli.mjs" ]; then
+  echo "ultimate-claude: dist/cli.mjs not found. Re-run the installer to rebuild." >&2
+  exit 1
+fi
+
+# Delegate to the real launcher (bin/ultimate-claude) which handles the
+# --max-old-space-size / --expose-gc heap-relaunch logic for long sessions.
+exec node "\${PROJECT_ROOT}/bin/ultimate-claude" "\$@"
 EOS
 chmod +x "$WRAPPER"
 
 echo "Installed → $WRAPPER"
 echo "  Project root: $PROJECT_ROOT"
 
-# Add BIN_DIR to PATH in common shell rc files
-if [ -n "$SHELL" ]; then
+# ---------------------------------------------------------------------------
+# Add BIN_DIR to PATH
+# ---------------------------------------------------------------------------
+RCFILE=""
+if [ -n "${SHELL:-}" ]; then
   case "$SHELL" in
     */bash)   RCFILE="$HOME/.bashrc" ;;
     */zsh)    RCFILE="$HOME/.zshrc" ;;
     */fish)   RCFILE="$HOME/.config/fish/config.fish" ;;
-    *)        RCFILE="" ;;
   esac
 fi
 
 if [ -n "$RCFILE" ]; then
   if [[ "$RCFILE" == *.fish ]]; then
-    if ! grep -Fxq "set -gx PATH $BIN_DIR \$PATH" "$RCFILE"; then
+    grep -Fxq "set -gx PATH $BIN_DIR \$PATH" "$RCFILE" 2>/dev/null || {
       echo "set -gx PATH $BIN_DIR \$PATH" >> "$RCFILE"
       echo "Added $BIN_DIR to PATH in $RCFILE"
-    fi
+    }
   else
-    if ! grep -Fxq "export PATH=\"$BIN_DIR:\$PATH\"" "$RCFILE"; then
+    grep -Fxq "export PATH=\"$BIN_DIR:\$PATH\"" "$RCFILE" 2>/dev/null || {
       echo "export PATH=\"$BIN_DIR:\$PATH\"" >> "$RCFILE"
       echo "Added $BIN_DIR to PATH in $RCFILE"
-    fi
+    }
   fi
 else
   echo "Add $BIN_DIR to your PATH manually to run 'ultimate-claude' from any location."
@@ -106,4 +133,6 @@ fi
 
 echo ""
 echo "✓ Done! Run: ultimate-claude"
-echo "  (you may need to restart your shell or run: source ${RCFILE:-~/.bashrc})"
+if [ -n "$RCFILE" ]; then
+  echo "  (you may need to restart your shell or run: source \"$RCFILE\")"
+fi
