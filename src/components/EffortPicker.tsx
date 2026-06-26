@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Box, Text, useInput } from '../ink.js'
 import { useTerminalSize } from '../hooks/useTerminalSize.js'
 import { useMainLoopModel } from '../hooks/useMainLoopModel.js'
@@ -8,7 +8,6 @@ import {
   getAvailableEffortLevels,
   getDisplayedEffortLevel,
   getEffortLevelDescription,
-  getEffortLevelLabel,
   isOpenAIEffortLevel,
   modelSupportsEffort,
   modelUsesOpenAIEffort,
@@ -20,7 +19,6 @@ import { getReasoningEffortForModel } from '../services/api/providerConfig.js'
 type EffortOption = {
   value: string
   description: string
-  isAvailable: boolean
 }
 
 type Props = {
@@ -28,45 +26,57 @@ type Props = {
   onCancel?: () => void
 }
 
-// Purple pixel wave pattern — a 7-column wide pixelated noise field
-// animated by shifting rows per frame. Covers the ultracode zone.
-function UltracodeWave({ frameCount, widthCells, height }: { frameCount: number; widthCells: number; height: number }) {
-  // Build a simple pseudo-random purple/violet pixel matrix that scrolls
-  const palette = [
-    '#1a0040',
-    '#2d006e',
-    '#3d0098',
-    '#5200c8',
-    '#6b00f0',
-    '#8a2be2',
-    '#9932cc',
-    '#b44df0',
-    '#c875ff',
-    '#7b00d4',
-    '#4b0082',
-  ] as const
+// Purple color palette for the animated wave
+const WAVE_PALETTE = [
+  '#0d001a',
+  '#1a0033',
+  '#2d004d',
+  '#3d0070',
+  '#5200a0',
+  '#6600cc',
+  '#7b00e0',
+  '#9000f0',
+  '#a020f0',
+  '#b44df0',
+  '#c875ff',
+  '#8b00ff',
+  '#6600cc',
+  '#4b0082',
+  '#2d004d',
+] as const
 
-  const rows: string[][] = []
-  for (let y = 0; y < height; y++) {
-    const cells: string[] = []
-    for (let x = 0; x < widthCells; x++) {
-      // pseudo-random but deterministic per cell; animated by frame offset
-      const seed = (x * 17 + y * 31 + frameCount * 7) % 256
-      const noiseVal = (Math.sin(seed * 2.39996) + 1) / 2
-      const idx = Math.floor(noiseVal * palette.length) % palette.length
-      cells.push(palette[idx]!)
+function buildWaveRow(widthCells: number, rowY: number, frame: number): Array<{ char: string; color: string }> {
+  const cells: Array<{ char: string; color: string }> = []
+  for (let x = 0; x < widthCells; x++) {
+    // Traveling wave: combination of two sine waves for a shimmering effect
+    const wave1 = Math.sin(x * 0.35 - frame * 0.5 + rowY * 1.1)
+    const wave2 = Math.sin(x * 0.15 + frame * 0.3 - rowY * 0.7)
+    const combined = (wave1 + wave2 + 2) / 4 // normalize to [0, 1]
+    const idx = Math.floor(combined * WAVE_PALETTE.length) % WAVE_PALETTE.length
+    cells.push({ char: '█', color: WAVE_PALETTE[idx]! })
+  }
+  return cells
+}
+
+// Renders one row of the wave, grouping consecutive same-color chars for fewer React nodes
+function WaveRow({ widthCells, rowY, frame }: { widthCells: number; rowY: number; frame: number }) {
+  const cells = buildWaveRow(widthCells, rowY, frame)
+
+  // Group consecutive same-color cells into spans
+  const spans: Array<{ text: string; color: string }> = []
+  for (const cell of cells) {
+    const last = spans[spans.length - 1]
+    if (last && last.color === cell.color) {
+      last.text += cell.char
+    } else {
+      spans.push({ text: cell.char, color: cell.color })
     }
-    rows.push(cells)
   }
 
   return (
-    <Box flexDirection="column">
-      {rows.map((row, y) => (
-        <Box key={y} flexDirection="row">
-          {row.map((bg, x) => (
-            <Text key={x} backgroundColor={bg as any}> </Text>
-          ))}
-        </Box>
+    <Box flexDirection="row">
+      {spans.map((span, i) => (
+        <Text key={i} color={span.color as any}>{span.text}</Text>
       ))}
     </Box>
   )
@@ -89,12 +99,10 @@ export function EffortPicker({ onSelect, onCancel }: Props) {
     {
       value: 'auto',
       description: 'Use the default effort level for your model',
-      isAvailable: true,
     },
     ...availableLevels.map(level => ({
       value: level,
       description: getEffortLevelDescription(level as EffortLevel),
-      isAvailable: true,
     })),
   ]
 
@@ -102,7 +110,6 @@ export function EffortPicker({ onSelect, onCancel }: Props) {
     options.push({
       value: 'ultracode',
       description: getEffortLevelDescription('ultracode'),
-      isAvailable: true,
     })
   }
 
@@ -119,27 +126,15 @@ export function EffortPicker({ onSelect, onCancel }: Props) {
     return idx >= 0 ? idx : 0
   })
 
-  const [animFrame, setAnimFrame] = useState(0)
-  const isUltracodeSelected = options[focusedIndex]?.value === 'ultracode'
+  const [frame, setFrame] = useState(0)
 
+  // Always animate — wave is always visible when ultracode zone is in view
   useEffect(() => {
-    const timer = setInterval(() => setAnimFrame(f => f + 1), 80)
+    const timer = setInterval(() => setFrame(f => (f + 1) % 1000), 80)
     return () => clearInterval(timer)
   }, [])
 
-  useInput((input, key) => {
-    if (key.leftArrow || key.upArrow) {
-      setFocusedIndex(prev => (prev - 1 + options.length) % options.length)
-    } else if (key.rightArrow || key.downArrow) {
-      setFocusedIndex(prev => (prev + 1) % options.length)
-    } else if (key.return) {
-      handleSelect(options[focusedIndex]!.value)
-    } else if (key.escape) {
-      handleCancel()
-    }
-  })
-
-  function handleSelect(value: string) {
+  const handleSelect = useCallback((value: string) => {
     if (value === 'auto') {
       setAppState(prev => ({ ...prev, effortValue: undefined }))
       onSelect(undefined)
@@ -150,35 +145,44 @@ export function EffortPicker({ onSelect, onCancel }: Props) {
       setAppState(prev => ({ ...prev, effortValue: effortLevel }))
       onSelect(effortLevel)
     }
-  }
+  }, [setAppState, onSelect])
 
-  function handleCancel() {
-    onCancel?.()
-  }
+  useInput((input, key) => {
+    if (key.leftArrow || key.upArrow) {
+      setFocusedIndex(prev => (prev - 1 + options.length) % options.length)
+    } else if (key.rightArrow || key.downArrow) {
+      setFocusedIndex(prev => (prev + 1) % options.length)
+    } else if (key.return) {
+      handleSelect(options[focusedIndex]!.value)
+    } else if (key.escape) {
+      onCancel?.()
+    }
+  })
 
   const n = options.length
-  // How many terminal columns the slider occupies
-  const sliderWidth = Math.min(columns - 4, 80)
-  // Width of each option slot
+  // Leave 4 chars margin each side
+  const sliderWidth = Math.min(columns - 8, 78)
   const slotWidth = Math.floor(sliderWidth / n)
 
-  // Current option label and sub-label
   const focused = options[focusedIndex]!
-  const subLabel = focused.value === 'ultracode' ? 'xhigh + workflows' : undefined
+  const isFocusedUltracode = focused.value === 'ultracode'
 
-  // For the ultracode purple block: it covers the right portion of the slider
-  // starting from the xhigh position to the right edge
-  const ultracodeIndex = options.findIndex(o => o.value === 'ultracode')
-  const xhighIndex = options.findIndex(o => o.value === 'xhigh' || o.value === 'max')
-  // Start of the purple zone (from xhigh onward if exists, else 60%)
-  const purpleStartSlot = xhighIndex >= 0 ? xhighIndex : Math.floor(n * 0.6)
-  const purpleWidthCells = sliderWidth - purpleStartSlot * slotWidth
+  // Where the purple wave starts — from xhigh or ~60% if no xhigh
+  const purpleStartIndex = Math.max(
+    options.findIndex(o => o.value === 'xhigh' || o.value === 'max'),
+    Math.floor(n * 0.6)
+  )
+  const purpleStartCol = purpleStartIndex * slotWidth
+  const purpleWidth = sliderWidth - purpleStartCol
 
-  // Indicator triangle column position
+  // Triangle indicator column (center of focused slot)
   const indicatorCol = focusedIndex * slotWidth + Math.floor(slotWidth / 2)
 
+  // Height of the wave block area (rows above the line)
+  const WAVE_HEIGHT = 3
+
   return (
-    <Box flexDirection="column" paddingTop={1}>
+    <Box flexDirection="column" paddingTop={1} paddingLeft={2}>
       {/* Header */}
       <Box marginBottom={1} flexDirection="row" gap={2}>
         <Text bold color="white">Effort</Text>
@@ -187,99 +191,89 @@ export function EffortPicker({ onSelect, onCancel }: Props) {
             ? `OpenAI/Codex (${provider})`
             : supportsEffort
             ? `Claude · ${provider}`
-            : `Effort not supported`}
+            : `Effort not supported for this model`}
         </Text>
       </Box>
 
-      {/* Faster / Smarter labels */}
-      <Box width={sliderWidth} flexDirection="row" justifyContent="space-between" marginBottom={0}>
-        <Text dimColor>Faster</Text>
-        <Text dimColor>Smarter</Text>
-      </Box>
-
-      {/* Purple pixel wave zone — absolutely positioned to right portion */}
-      <Box flexDirection="row" width={sliderWidth} position="relative" marginBottom={0}>
-        {/* Empty left portion */}
-        <Box width={purpleStartSlot * slotWidth} flexDirection="column">
-          {/* Indicator triangle row */}
-          <Box flexDirection="row">
-            {Array.from({ length: purpleStartSlot * slotWidth }, (_, i) => {
-              const isIndicator = i === indicatorCol && indicatorCol < purpleStartSlot * slotWidth
-              return (
-                <Text key={i} color={isIndicator ? 'white' : undefined}>
-                  {isIndicator ? '▲' : ' '}
-                </Text>
-              )
-            })}
+      {/* Faster / Smarter row with wave block behind right section */}
+      <Box flexDirection="row" width={sliderWidth} marginBottom={0}>
+        {/* Left plain section: "Faster" label padded to purple start */}
+        <Box width={purpleStartCol} flexDirection="column">
+          <Box flexDirection="row" justifyContent="flex-start">
+            <Text dimColor>Faster</Text>
           </Box>
-          {/* Empty space below (wave height - 1 extra rows) */}
-          {Array.from({ length: 3 }, (_, row) => (
-            <Box key={row} flexDirection="row">
-              {Array.from({ length: purpleStartSlot * slotWidth }, (_, i) => (
-                <Text key={i}> </Text>
-              ))}
-            </Box>
+          {/* Empty rows to match wave height */}
+          {Array.from({ length: WAVE_HEIGHT - 1 }, (_, i) => (
+            <Box key={i}><Text> </Text></Box>
           ))}
         </Box>
 
-        {/* Purple animated wave covering right portion */}
-        {purpleWidthCells > 0 && (
-          <Box flexDirection="column">
-            {/* Triangle row within wave zone */}
-            <Box flexDirection="row">
-              {Array.from({ length: purpleWidthCells }, (_, i) => {
-                const globalCol = purpleStartSlot * slotWidth + i
-                const isIndicator = globalCol === indicatorCol
-                return (
-                  <Text
-                    key={i}
-                    backgroundColor={isIndicator ? undefined : ('#3d0098' as any)}
-                    color={isIndicator ? 'white' : undefined}
-                    bold={isIndicator}
-                  >
-                    {isIndicator ? '▲' : ' '}
-                  </Text>
-                )
-              })}
-            </Box>
-            {/* Wave rows */}
-            <UltracodeWave frameCount={animFrame} widthCells={purpleWidthCells} height={3} />
+        {/* Right purple wave section with "Smarter" label on top */}
+        <Box flexDirection="column" width={purpleWidth}>
+          {/* Row 0: "Smarter" text right-aligned over the wave */}
+          <Box flexDirection="row" width={purpleWidth} justifyContent="flex-end">
+            <Text dimColor>Smarter</Text>
           </Box>
-        )}
+          {/* Wave rows 1..WAVE_HEIGHT-1 */}
+          {Array.from({ length: WAVE_HEIGHT - 1 }, (_, rowY) => (
+            <WaveRow key={rowY} widthCells={purpleWidth} rowY={rowY + 1} frame={frame} />
+          ))}
+        </Box>
+      </Box>
+
+      {/* Triangle indicator row — sits just above the slider line */}
+      <Box flexDirection="row" width={sliderWidth}>
+        {Array.from({ length: sliderWidth }, (_, x) => {
+          const isTriangle = x === indicatorCol
+          if (isTriangle) {
+            return <Text key={x} color="white" bold>▲</Text>
+          }
+          // In the purple zone? Color it
+          if (x >= purpleStartCol) {
+            return <WaveCell key={x} x={x - purpleStartCol} frame={frame} char=" " />
+          }
+          return <Text key={x}> </Text>
+        })}
       </Box>
 
       {/* Horizontal line */}
-      <Box flexDirection="row" width={sliderWidth} marginBottom={0}>
-        <Text dimColor>{'─'.repeat(sliderWidth)}</Text>
+      <Box flexDirection="row" width={sliderWidth}>
+        {Array.from({ length: sliderWidth }, (_, x) => (
+          <Text key={x} dimColor>─</Text>
+        ))}
       </Box>
 
       {/* Option labels row */}
-      <Box flexDirection="row" width={sliderWidth} marginBottom={1}>
+      <Box flexDirection="row" width={sliderWidth} marginBottom={0}>
         {options.map((opt, i) => {
           const isFocused = i === focusedIndex
-          const label = opt.value === 'auto' ? 'auto' : opt.value === 'ultracode' ? 'ultracode' : opt.value
-          const paddedLabel = label.padEnd(slotWidth).slice(0, slotWidth)
+          const isCurrent = opt.value === 'auto'
+            ? appStateEffort === undefined
+            : currentDisplayedLevel === opt.value
+          const label = opt.value
+          // Pad to slot width
+          const padded = label.slice(0, slotWidth).padEnd(slotWidth)
+          let col: string
+          if (isFocused) col = 'white'
+          else if (isCurrent) col = '#888'
+          else col = '#555'
           return (
-            <Text
-              key={opt.value}
-              bold={isFocused}
-              color={isFocused ? 'white' : ('gray' as any)}
-            >
-              {paddedLabel}
+            <Text key={opt.value} color={col as any} bold={isFocused}>
+              {padded}
             </Text>
           )
         })}
       </Box>
 
       {/* Sub-label for ultracode */}
-      {subLabel && (
-        <Box marginBottom={0} paddingLeft={Math.max(0, ultracodeIndex * slotWidth)}>
-          <Text dimColor>{subLabel}</Text>
+      {isFocusedUltracode && (
+        <Box paddingLeft={Math.max(0, (options.length - 1) * slotWidth)} marginBottom={0}>
+          <Text dimColor>xhigh + workflows</Text>
         </Box>
       )}
 
       {/* Description */}
-      <Box marginBottom={1}>
+      <Box marginTop={1} marginBottom={1}>
         <Text italic color="cyan">{focused.description}</Text>
       </Box>
 
@@ -289,4 +283,13 @@ export function EffortPicker({ onSelect, onCancel }: Props) {
       </Box>
     </Box>
   )
+}
+
+// Single cell in the purple wave zone (for the triangle row)
+function WaveCell({ x, frame, char }: { x: number; frame: number; char: string }) {
+  const wave1 = Math.sin(x * 0.35 - frame * 0.5)
+  const wave2 = Math.sin(x * 0.15 + frame * 0.3)
+  const combined = (wave1 + wave2 + 2) / 4
+  const idx = Math.floor(combined * WAVE_PALETTE.length) % WAVE_PALETTE.length
+  return <Text color={WAVE_PALETTE[idx]! as any}>{char === ' ' ? '█' : char}</Text>
 }
