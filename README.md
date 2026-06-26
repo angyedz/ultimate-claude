@@ -4,12 +4,16 @@
 
 ## Overview
 
-**Ultimate Claude** is a next‑generation AI‑assisted coding companion that builds on the classic OpenClaude experience. It features a bold, vibrant UI, a powerful **Ultracode** reasoning mode for deep, exhaustive analysis, and a sleek horizontal effort selector that can be navigated entirely with the keyboard.
+**Ultimate Claude** is a modern AI‑powered coding assistant that streamlines development with intelligent code generation, context‑aware suggestions, and deep analysis capabilities. It combines the best of Claude Code and OpenClaude, delivering a polished, vibrant command‑line experience.
 
-- **Vibrant Visuals** – Custom color palettes, gradient glass‑morphism, smooth micro‑animations, and a mascot that brings personality to the terminal.
-- **Effort Levels** – `quick`, `balanced`, `deep`, and the newly introduced **`ultracode`** which forces the model to think as much as possible, providing the most thorough suggestions.
-- **Keyboard‑Friendly UI** – The effort selector is linear and fully navigable with arrow keys, complete with a shimmering animated cursor.
-- **Modular Architecture** – Written in TypeScript, using the `ink` library for a rich CLI experience.
+- **Stunning UI** – Gradient glass‑morphism, smooth micro‑animations, and a friendly mascot.
+- **Effort Modes** – Choose between `low`, `medium`, `high`, `extra high`, and the exhaustive **`ultracode`** for maximum reasoning depth.
+- **Keyboard‑First Navigation** – Seamless arrow‑key selection with animated feedback.
+- **Extensible Architecture** – Built with TypeScript and the `ink` library, easy to extend with custom commands.
+
+### Source Repositories
+- Claude Code: https://github.com/codeaashu/claude-code
+- OpenClaude: https://github.com/Gitlawb/openclaude
 
 ## Features
 
@@ -28,11 +32,67 @@
 - **Node.js** (v18 or later) with **npm** or **bun**.
 - **Git** installed and available in your `PATH`.
 
-### Installation
+## Quick Start
+
+**One‑line installers**
+
+- macOS / Linux:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/angyedz/ultimate-claude/main/install.sh | bash
+```
+
+- Windows (PowerShell):
+
+```powershell
+irm https://raw.githubusercontent.com/angyedz/ultimate-claude/main/install.ps1 | iex
+```
+
+You can now launch Ultimate Claude from any terminal with:
+
+```sh
+ultimate-claude
+```
+
+## Manual Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/angyedz/ultimate-claude.git
+cd ultimate-claude
+
+# Install dependencies
+npm install   # or `bun install`
+```
+
 
 ```bash
 # Clone the repository (once we have a remote)
 # git clone https://github.com/your-org/ultimate-claude.git
+# cd ultimate-claude
+
+# Install dependencies
+npm install   # or `bun install`
+```
+
+**One‑line installers**
+
+- macOS / Linux:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/angyedz/ultimate-claude/main/install.sh | bash
+```
+
+- Windows (PowerShell):
+
+```powershell
+irm https://raw.githubusercontent.com/angyedz/ultimate-claude/main/install.ps1 | iex
+```
+
+
+```bash
+# Clone the repository (once we have a remote)
+# git clone https://github.com/angyedz/ultimate-claude.git
 # cd ultimate-claude
 
 # Install dependencies
@@ -83,4 +143,3 @@ Distributed under the **MIT License**. See `LICENSE` for more information.
 
 ---
 
-*Generated with love by the Antigravity AI assistant.*
