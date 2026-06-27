@@ -16,6 +16,7 @@ import { logError } from '../../utils/log.js';
 import { editFileInEditor } from '../../utils/promptEditor.js';
 import { Select } from '../../components/CustomSelect/index.js';
 import { getOriginalCwd } from '../../bootstrap/state.js';
+import { localize } from '../../i18n/index.js';
 
 function MemoryCommand({
   onDone
@@ -91,12 +92,12 @@ function MemoryCommand({
           await unlink(selectedPath);
           clearMemoryFileCaches();
           await getMemoryFiles();
-          setStatusMessage(`Memory file reset/deleted successfully`);
+          setStatusMessage(localize('memory.reset_success', 'Memory file reset/deleted successfully'));
         } else {
-          setStatusMessage(`Memory file does not exist`);
+          setStatusMessage(localize('memory.not_exists', 'Memory file does not exist'));
         }
       } catch (err) {
-        setStatusMessage(`Error resetting memory file: ${err}`);
+        setStatusMessage(localize('memory.reset_failed', `Error resetting memory file: ${err}`, { err: String(err) }));
       }
       setSelectedPath(null);
       setScreen('select');
@@ -106,14 +107,14 @@ function MemoryCommand({
   };
 
   const handleCancel = () => {
-    onDone('Cancelled memory editing', {
+    onDone(localize('memory.cancelled', 'Cancelled memory editing'), {
       display: 'system'
     });
   };
 
   if (screen === 'select') {
     return (
-      <Dialog title="Memory" subtitle={statusMessage || undefined} onCancel={handleCancel} color="remember">
+      <Dialog title={localize('memory.title', 'Memory')} subtitle={statusMessage || undefined} onCancel={handleCancel} color="remember">
         <Box flexDirection="column">
           <React.Suspense fallback={null}>
             <MemoryFileSelector onSelect={handleSelectMemoryFile} onCancel={handleCancel} />
@@ -121,7 +122,7 @@ function MemoryCommand({
 
           <Box marginTop={1}>
             <Text dimColor>
-              Learn more: <Link url="https://code.claude.com/docs/en/memory" />
+              {localize('memory.learn_more', 'Learn more:')} <Link url="https://code.claude.com/docs/en/memory" />
             </Text>
           </Box>
         </Box>
@@ -133,12 +134,12 @@ function MemoryCommand({
     const filename = basename(selectedPath);
     const exists = existsSync(selectedPath);
     const actionsOptions = [
-      { value: 'edit', label: 'Edit memory file' },
-      { value: 'reset', label: 'Reset/Clear memory file' },
-      { value: 'back', label: 'Back' }
+      { value: 'edit', label: localize('memory.edit_option', 'Edit memory file') },
+      { value: 'reset', label: localize('memory.reset_option', 'Reset/Clear memory file') },
+      { value: 'back', label: localize('memory.back_option', 'Back') }
     ];
     return (
-      <Dialog title={`Manage Memory: ${filename}`} subtitle={exists ? `Saved in ${getRelativeMemoryPath(selectedPath)}` : 'New file (not yet created)'} onCancel={() => setScreen('select')} color="remember" showNavigationHint>
+      <Dialog title={`${localize('memory.manage_title', 'Manage Memory')}: ${filename}`} subtitle={exists ? localize('memory.saved_in', `Saved in ${getRelativeMemoryPath(selectedPath)}`, { path: getRelativeMemoryPath(selectedPath) }) : localize('memory.new_file', 'New file (not yet created)')} onCancel={() => setScreen('select')} color="remember" showNavigationHint>
         <Select options={actionsOptions} onChange={handleSelectAction} onCancel={() => setScreen('select')} />
       </Dialog>
     );
@@ -147,11 +148,11 @@ function MemoryCommand({
   if (screen === 'reset_confirm' && selectedPath) {
     const filename = basename(selectedPath);
     const confirmOptions = [
-      { value: 'yes', label: 'Yes, permanently delete/reset' },
-      { value: 'no', label: 'No, keep it' }
+      { value: 'yes', label: localize('memory.confirm_reset_yes', 'Yes, permanently delete/reset') },
+      { value: 'no', label: localize('memory.confirm_reset_no', 'No, keep it') }
     ];
     return (
-      <Dialog title="Confirm Reset/Clear" subtitle={`Are you sure you want to reset/clear the memory file "${filename}"? This will permanently delete the file.`} onCancel={() => setScreen('file_actions')} color="remember" showNavigationHint>
+      <Dialog title={localize('memory.confirm_reset_title', 'Confirm Reset/Clear')} subtitle={`${localize('memory.confirm_reset_title', 'Are you sure you want to reset/clear the memory file')} "${filename}"?`} onCancel={() => setScreen('file_actions')} color="remember" showNavigationHint>
         <Select options={confirmOptions} onChange={handleConfirmReset} onCancel={() => setScreen('file_actions')} />
       </Dialog>
     );

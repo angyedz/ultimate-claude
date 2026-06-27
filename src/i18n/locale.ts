@@ -7,6 +7,8 @@ const LANGUAGE_MAP: Record<string, Locale> = {
   en: 'en',
   vietnamese: 'vi',
   vi: 'vi',
+  russian: 'ru',
+  ru: 'ru',
 }
 
 export function detectLocale(): Locale {

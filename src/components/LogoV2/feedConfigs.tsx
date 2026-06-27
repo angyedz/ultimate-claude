@@ -9,6 +9,7 @@ import { getCwd } from '../../utils/cwd.js';
 import { formatRelativeTimeAgo } from '../../utils/format.js';
 import { getReleaseSectionHeaderTitle, isReleaseSectionHeader } from '../../utils/releaseNotes.js';
 import type { FeedConfig, FeedLine } from './Feed.js';
+import { localize } from '../../i18n/index.js';
 export function createRecentActivityFeed(activities: LogOption[]): FeedConfig {
   const lines: FeedLine[] = activities.map(log => {
     const time = formatRelativeTimeAgo(log.modified);
@@ -19,10 +20,10 @@ export function createRecentActivityFeed(activities: LogOption[]): FeedConfig {
     };
   });
   return {
-    title: 'Recent Sessions',
+    title: localize('feed.recent_sessions', 'Recent Sessions'),
     lines,
     footer: lines.length > 0 ? '/resume for more' : undefined,
-    emptyMessage: 'No recent sessions'
+    emptyMessage: localize('feed.no_sessions', 'No recent sessions')
   };
 }
 export function createWhatsNewFeed(releaseNotes: string[]): FeedConfig {
@@ -37,10 +38,10 @@ export function createWhatsNewFeed(releaseNotes: string[]): FeedConfig {
     };
   });
   return {
-    title: "Ultimate Claude Code Updates",
+    title: localize('logo.recent_updates', 'Ultimate Claude Code Updates'),
     lines,
     footer: lines.length > 0 ? '/release-notes for more' : undefined,
-    emptyMessage: 'Check /release-notes for recent updates'
+    emptyMessage: localize('feed.check_release_notes', 'Check /release-notes for recent updates')
   };
 }
 export function createProjectOnboardingFeed(steps: Step[]): FeedConfig {
@@ -56,14 +57,14 @@ export function createProjectOnboardingFeed(steps: Step[]): FeedConfig {
       text: `${checkmark}${text}`
     };
   });
-  const warningText = getCwd() === homedir() ? 'Note: You have launched ultimate-claude in your home directory. For the best experience, launch it in a project directory instead.' : undefined;
+  const warningText = getCwd() === homedir() ? localize('feed.home_dir_warning', 'Note: You have launched ultimate-claude in your home directory. For the best experience, launch it in a project directory instead.') : undefined;
   if (warningText) {
     lines.push({
       text: warningText
     });
   }
   return {
-    title: 'Tips for getting started',
+    title: localize('feed.tips_title', 'Tips for getting started'),
     lines
   };
 }

@@ -124,6 +124,7 @@ import { clearSpeculativeChecks } from '../tools/BashTool/bashPermissions.js';
 import { getLatestVersion, type AutoUpdaterResult } from '../utils/autoUpdater.js';
 import { gt } from '../utils/semver.js';
 import { getInitialSettings } from '../utils/settings/settings.js';
+import { localize } from '../i18n/index.js';
 import { getGlobalConfig, saveGlobalConfig, saveGlobalConfigDeferred } from '../utils/config.js';
 import { hasConsoleBillingAccess } from '../utils/billing.js';
 import { logEvent, type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS } from 'src/services/analytics/index.js';
@@ -2567,34 +2568,16 @@ export function REPL({
         const latest = await getLatestVersion('latest');
         const current = MACRO.VERSION;
         if (latest && gt(latest, current)) {
-          const settings = getInitialSettings();
-          const lang = settings?.language?.toLowerCase();
-          const isRussian = lang === 'russian' || lang === 'ru';
-          if (isRussian) {
-            addNotification({
-              key: 'startup-update-available',
-              jsx: (
-                <Box flexDirection="row" gap={1}>
-                  <Text color="warning">Доступно обновление!</Text>
-                  <Text>Новая версия: {latest} (Текущая: {current}). Введите /update для обновления.</Text>
-                </Box>
-              ),
-              priority: 'high',
-              timeoutMs: 15000
-            });
-          } else {
-            addNotification({
-              key: 'startup-update-available',
-              jsx: (
-                <Box flexDirection="row" gap={1}>
-                  <Text color="warning">Update available!</Text>
-                  <Text>New version: {latest} (Current: {current}). Type /update to install.</Text>
-                </Box>
-              ),
-              priority: 'high',
-              timeoutMs: 15000
-            });
-          }
+          addNotification({
+            key: 'startup-update-available',
+            jsx: (
+              <Box flexDirection="row" gap={1}>
+                <Text color="warning">{localize('update.available', `Ultimate Claude Code update available: v${latest}. Run /update to install.`, { version: latest })}</Text>
+              </Box>
+            ),
+            priority: 'high',
+            timeoutMs: 15000
+          });
         }
       } catch (err) {
         // Silent error

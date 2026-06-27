@@ -17,6 +17,7 @@ import { getFsImplementation } from '../../utils/fsOperations.js';
 import { execFileNoThrow } from '../../utils/execFileNoThrow.js';
 import { getCwd } from '../../utils/cwd.js';
 import { join } from 'path';
+import { localize } from '../../i18n/index.js';
 
 // Skills are always PromptCommands with CommandBase properties
 type SkillCommand = CommandBase & PromptCommand;
@@ -31,12 +32,12 @@ type Props = {
 
 function getSourceTitle(source: SkillSource): string {
   if (source === 'plugin') {
-    return 'Plugin skills';
+    return localize('skills.menu.source.plugin', 'Plugin skills');
   }
   if (source === 'mcp') {
-    return 'MCP skills';
+    return localize('skills.menu.source.mcp', 'MCP skills');
   }
-  return `${capitalize(getSettingSourceName(source))} skills`;
+  return localize('skills.source.title', `${capitalize(getSettingSourceName(source))} skills`, { source: capitalize(getSettingSourceName(source)) });
 }
 
 function getSourceSubtitle(source: SkillSource, skills: SkillCommand[]): string | undefined {
@@ -58,7 +59,7 @@ function getSkillListLabel(skill: SkillCommand): string {
 }
 
 export function getEmptySkillsMenuMessage(): string {
-  return `Create skills in .claude/skills/<name>/SKILL.md or ${getUserSkillExampleDisplayPath()}`;
+  return localize('skills.menu.empty', `Create skills in .claude/skills/<name>/SKILL.md or ${getUserSkillExampleDisplayPath()}`);
 }
 
 function renderSkill(skill: SkillCommand) {
@@ -205,7 +206,7 @@ export function SkillsMenu({ onExit, commands: initialCommands }: Props) {
 
   if (viewState === 'install-prompt') {
     return (
-      <Dialog title="Install Skill from Git" subtitle="Enter repository URL to install custom skill" onCancel={() => setViewState('list')} isCancelActive={false}>
+      <Dialog title={localize('skills.menu.install_title', 'Install Skill from Git')} subtitle={localize('skills.menu.install_subtitle', 'Enter repository URL to install custom skill')} onCancel={() => setViewState('list')} isCancelActive={false}>
         <Box flexDirection="column" gap={1}>
           <Text>Git Repository URL (.git):</Text>
           <Box borderStyle="round" borderColor="permission" paddingLeft={1}>
@@ -222,7 +223,7 @@ export function SkillsMenu({ onExit, commands: initialCommands }: Props) {
             />
           </Box>
           <Text dimColor={true} italic={true}>
-            Press <ConfigurableShortcutHint action="confirm:no" context="Confirmation" fallback="Esc" description="back" /> to go back to list
+            Press <ConfigurableShortcutHint action="confirm:no" context="Confirmation" fallback="Esc" description="back" /> {localize('skills.menu.install_back', 'to go back to list')}
           </Text>
         </Box>
       </Dialog>
@@ -231,10 +232,10 @@ export function SkillsMenu({ onExit, commands: initialCommands }: Props) {
 
   if (viewState === 'installing') {
     return (
-      <Dialog title="Installing Skill" subtitle="Running git clone..." onCancel={() => {}} isCancelActive={false}>
+      <Dialog title={localize('skills.menu.installing_title', 'Installing Skill')} subtitle={localize('skills.menu.installing_subtitle', 'Running git clone...')} onCancel={() => {}} isCancelActive={false}>
         <Box flexDirection="column" gap={1}>
-          <Text color="brand">Cloning {gitUrl}...</Text>
-          <Text dimColor={true}>Please wait while files are being downloaded and parsed.</Text>
+          <Text color="brand">{localize('skills.menu.installing_msg', `Cloning ${gitUrl}...`, { url: gitUrl })}</Text>
+          <Text dimColor={true}>{localize('skills.menu.installing_wait', 'Please wait while files are being downloaded and parsed.')}</Text>
         </Box>
       </Dialog>
     );
@@ -242,11 +243,11 @@ export function SkillsMenu({ onExit, commands: initialCommands }: Props) {
 
   if (viewState === 'install-success') {
     return (
-      <Dialog title="Success!" subtitle="Skill installed successfully" onCancel={() => setViewState('list')} isCancelActive={false}>
+      <Dialog title={localize('skills.menu.success_title', 'Success!')} subtitle={localize('skills.menu.success_subtitle', 'Skill installed successfully')} onCancel={() => setViewState('list')} isCancelActive={false}>
         <Box flexDirection="column" gap={1}>
-          <Text color="green">The skill was successfully cloned, verified, and loaded!</Text>
+          <Text color="green">{localize('skills.menu.success_msg', 'The skill was successfully cloned, verified, and loaded!')}</Text>
           <Text dimColor={true} italic={true}>
-            Press <Text bold>[Enter]</Text> or <Text bold>[Esc]</Text> to return to the skills list
+            {localize('skills.menu.success_back', 'Press [Enter] or [Esc] to return to the skills list')}
           </Text>
         </Box>
       </Dialog>
@@ -255,11 +256,11 @@ export function SkillsMenu({ onExit, commands: initialCommands }: Props) {
 
   if (viewState === 'install-error') {
     return (
-      <Dialog title="Error Installing Skill" subtitle="Installation failed" onCancel={() => setViewState('list')} isCancelActive={false}>
+      <Dialog title={localize('skills.menu.error_title', 'Error Installing Skill')} subtitle={localize('skills.menu.error_subtitle', 'Installation failed')} onCancel={() => setViewState('list')} isCancelActive={false}>
         <Box flexDirection="column" gap={1}>
           <Text color="red">{errorMessage}</Text>
           <Text dimColor={true} italic={true}>
-            Press <Text bold>[Enter]</Text> or <Text bold>[Esc]</Text> to return to the skills list
+            {localize('skills.menu.error_back', 'Press [Enter] or [Esc] to return to the skills list')}
           </Text>
         </Box>
       </Dialog>
@@ -279,7 +280,7 @@ export function SkillsMenu({ onExit, commands: initialCommands }: Props) {
       <Box marginTop={1} flexDirection="column">
         <Text dimColor={true}>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</Text>
         <FullWidthRow>
-          <Text dimColor={true}>Press <Text bold={true} color="brand">[I]</Text> to install a skill from a Git repository</Text>
+          <Text dimColor={true}>{localize('skills.menu.install_hint', 'Press [I] to install a skill from a Git repository')}</Text>
         </FullWidthRow>
       </Box>
     </Box>
@@ -291,14 +292,14 @@ export function SkillsMenu({ onExit, commands: initialCommands }: Props) {
       <Box marginTop={1} flexDirection="column">
         <Text dimColor={true}>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</Text>
         <FullWidthRow>
-          <Text dimColor={true}>Press <Text bold={true} color="brand">[I]</Text> to install a skill from a Git repository</Text>
+          <Text dimColor={true}>{localize('skills.menu.install_hint', 'Press [I] to install a skill from a Git repository')}</Text>
         </FullWidthRow>
       </Box>
     </Box>
   );
 
   return (
-    <Dialog title="Skills" subtitle={skillCountText} onCancel={handleCancel} hideInputGuide={true}>
+    <Dialog title={localize('skills.menu.title', 'Skills')} subtitle={skillCountText} onCancel={handleCancel} hideInputGuide={true}>
       {listContent}
       <FullWidthRow>
         <Text dimColor={true} italic={true}>

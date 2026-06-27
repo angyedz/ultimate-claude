@@ -7,6 +7,7 @@ import type {
 } from '../../types/command.js'
 import { useSettings } from '../../hooks/useSettings.js'
 import { updateSettingsForSource } from '../../utils/settings/settings.js'
+import { localize } from '../../i18n/index.js'
 
 type Props = {
   onDone: LocalJSXCommandOnDone
@@ -32,20 +33,18 @@ function LanguagePickerCommand({ onDone }: Props): React.ReactElement {
     (chosen: string) => {
       updateSettingsForSource('userSettings', { language: chosen })
       const msg = chosen === 'russian'
-        ? 'Язык интерфейса изменен на Русский.'
-        : 'Interface language set to English.';
+        ? localize('language.set_russian', 'Язык интерфейса изменён на Русский.')
+        : localize('language.set_english', 'Interface language set to English.');
       onDone(msg)
     },
     [onDone],
   )
 
   const handleCancel = React.useCallback(() => {
-    onDone('Language picker dismissed', { display: 'system' })
+    onDone(localize('language.dismissed', 'Language picker dismissed'), { display: 'system' })
   }, [onDone])
 
-  const title = initial === 'russian'
-    ? 'Выберите предпочитаемый язык'
-    : 'Choose your preferred language';
+  const title = localize('language.title', 'Choose your preferred language');
 
   return (
     <Box flexDirection="column" gap={1}>

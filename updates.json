@@ -1,4 +1,12 @@
 {
+  "1.0.20": {
+    "en": [
+      "Full Russian i18n: all UI, commands, menus, and notifications now respect the selected language"
+    ],
+    "ru": [
+      "Полная русификация: весь интерфейс, команды, меню и уведомления теперь соответствуют выбранному языку"
+    ]
+  },
   "1.0.19": {
     "en": [
       "Improved command autocomplete, added Arrow Right support for suggestions, and interactive Git skills installer"

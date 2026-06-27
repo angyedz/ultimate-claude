@@ -61,6 +61,10 @@ const claudeCommandDescriptionKeys: Record<string, LocalizationKey> = {
   usage: 'commands.usage.description',
   vim: 'commands.vim.description',
   wiki: 'commands.wiki.description',
+  // Our custom commands
+  language: 'commands.language.description',
+  session: 'commands.session.description',
+  'system-reset': 'commands.system-reset.description',
 }
 
 export function getClaudeCommandDescriptionKey(
