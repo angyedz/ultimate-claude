@@ -1,4 +1,12 @@
 {
+  "1.0.32": {
+    "en": [
+      "Completely removed all sponsored advertisement tips (Xiaomi MiMo, Atomic Chat, Atlas Cloud) and deactivated the sponsored tip loader"
+    ],
+    "ru": [
+      "Полностью удалена спонсорская реклама (Xiaomi MiMo, Atomic Chat, Atlas Cloud) и отключена фоновая генерация рекламных подсказок"
+    ]
+  },
   "1.0.31": {
     "en": [
       "Fixed reasoning effort type limitations; added max and ultracode values to API types (ReasoningEffort, parseReasoningEffort, OpenAIShimMessages, and OpenAIShimBeta) to prevent values from being silently discarded for OpenAI-compatible models (e.g. DeepSeek v4 Flash)"
