@@ -13,11 +13,26 @@ if (-Not (Test-Path $installDir)) {
 if (Test-Path "$installDir\.git") {
     Write-Host "Repository exists, pulling latest changes..."
     Set-Location $installDir
-    git pull
+    git -c core.protectNTFS=false pull
 } else {
     Write-Host "Cloning repository..."
-    git clone $repoUrl $installDir
+    # core.protectNTFS=false allows git to skip invalid Windows paths (e.g. paths with colons)
+    # without aborting the entire checkout
+    git -c core.protectNTFS=false clone $repoUrl $installDir
     Set-Location $installDir
+}
+
+# Ensure package.json exists (checkout may have partially failed on some files)
+if (-Not (Test-Path "$installDir\package.json")) {
+    Write-Host "Recovering checkout..."
+    Set-Location $installDir
+    git -c core.protectNTFS=false checkout HEAD -- .
+}
+
+# Final check — abort if package.json still missing
+if (-Not (Test-Path "$installDir\package.json")) {
+    Write-Error "Checkout failed: package.json not found in $installDir. Please report this issue."
+    exit 1
 }
 
 # Install Node.js dependencies (npm preferred, fallback to bun)
@@ -48,7 +63,6 @@ if (Get-Command npm -ErrorAction SilentlyContinue) {
     exit 1
 }
 "@ | Set-Content -Path $wrapperPath -Encoding UTF8
-# Ensure the wrapper is executable
 Set-ItemProperty -Path $wrapperPath -Name IsReadOnly -Value $false
 Write-Host "Wrapper script created at $wrapperPath"
 
