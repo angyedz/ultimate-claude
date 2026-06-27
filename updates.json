@@ -1,59 +1,59 @@
 {
   "1.0.19": [
-    "feat: improve autocomplete, support right arrow completion, and implement git skills installer"
+    "Улучшено автодополнение команд, добавлена поддержка клавиши Arrow Right для принятия подсказок и интерактивный установщик скиллов из Git"
   ],
   "1.0.18": [
-    "feat: add list, show, edit, and clear command-line subcommands to /memory"
+    "Добавлены консольные команды list, show, edit и clear для управления памятью через команду /memory"
   ],
   "1.0.17": [
-    "fix: globally clamp max and ultracode effort values to the highest supported level for all OpenAI-compatible models"
+    "Исправлено ограничение максимального уровня размышления (max и ultracode) для всех OpenAI-совместимых моделей"
   ],
   "1.0.16": [
-    "fix: map max and ultracode effort values to max in OpenAI shim reasoning plan for DeepSeek and Zai models"
+    "Настроен маппинг параметров max и ultracode в OpenAI-совместимых планах рассуждения для моделей DeepSeek и Zai"
   ],
   "1.0.15": [
-    "feat: replace xhigh with max, add shimmering effect to max option, fix display mapping for max and ultracode effort levels"
+    "Добавлен уровень размышления max вместо xhigh с градиентным переливанием текста в терминале"
   ],
   "1.0.14": [
-    "fix: align effort ▲ indicator to the center of label text"
+    "Исправлено выравнивание треугольного указателя ▲ по центру текста выбранного режима"
   ],
   "1.0.13": [
-    "fix: move effort ▲ indicator below slider line"
+    "Указатель треугольника ▲ опущен ниже линии выбора уровня размышления"
   ],
   "1.0.12": [
-    "feat: redesign /effort command as horizontal slider UI"
+    "Добавлен горизонтальный анимированный слайдер для выбора уровня размышления /effort"
   ],
   "1.0.11": [
-    "feat: add 4 new providers + rebrand onboarding to Ultimate Claude Code"
+    "Интегрированы 4 новых провайдера API и проведена перезагрузка приветственного экрана"
   ],
   "1.0.10": [
-    "Release version 1.0.10"
+    "Техническое обновление версии 1.0.10"
   ],
   "1.0.9": [
-    "feat: make /system /memory /config /session /system-reset /theme immediate mid-turn commands"
+    "Команды /system, /memory, /config, /session, /system-reset и /theme переведены в быстрый синхронный режим исполнения"
   ],
   "1.0.8": [
-    "feat: improve ultracode sea wave animation with 2D gradient"
+    "Улучшена анимация волн в режиме ultracode с использованием 2D градиентов"
   ],
   "1.0.7": [
-    "feat: support in-UI resets for /system and edit/reset screens for /memory"
+    "Добавлена возможность сброса системных настроек и редактирования памяти прямо из интерактивного интерфейса"
   ],
   "1.0.6": [
-    "feat: implement local session manager and system-reset command"
+    "Реализован локальный менеджер сессий и команда полного сброса состояния /system-reset"
   ],
   "1.0.5": [
-    "fix: scan entire message content for markdown syntax"
+    "Исправлено сканирование разметки Markdown в теле текстовых сообщений"
   ],
   "1.0.4": [
-    "fix: replace execSync shell wrapper with spawnSync when launching prompt editor"
+    "Замена оболочки запуска внешнего редактора с execSync на более стабильный spawnSync"
   ],
   "1.0.3": [
-    "feat: remove all emojis/smileys, add cyan sea wave animation on ultracode focus"
+    "Очищены лишние смайлы из интерфейса, добавлена анимированная бирюзовая волна при фокусе на режиме ultracode"
   ],
   "1.0.2": [
-    "feat: simplify /update command to take no arguments"
+    "Упрощена команда автоматического обновления /update (теперь запускается без аргументов)"
   ],
   "1.0.1": [
-    "Release version 1.0.1"
+    "Начальный стабильный релиз версии 1.0.1"
   ]
 }
