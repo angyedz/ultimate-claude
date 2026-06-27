@@ -413,6 +413,12 @@ function resolveMetadataReasoningControl(
 
 function isHeavyModel(model: string): boolean {
   const m = model.toLowerCase()
+
+  // Special reasoning mini models that support max/ultracode
+  if (m.includes('o1-mini') || m.includes('o3-mini')) {
+    return true
+  }
+
   if (m.includes('haiku') || 
       m.includes('flash') || 
       m.includes('mini') || 
@@ -424,13 +430,18 @@ function isHeavyModel(model: string): boolean {
       m.includes('deepseek-flash')) {
     return false
   }
+
   if (m.includes('opus') || 
       m.includes('sonnet') || 
       m.includes('fable') || 
+      m.includes('mythos') || 
       m.includes('pro') || 
       m.includes('r1') || 
+      m.includes('r2') || 
       m.includes('o1') || 
       m.includes('o3') || 
+      m.includes('gpt-5') || 
+      m.includes('gpt-4') || 
       m.includes('deepseek-reasoner') ||
       m.includes('deepseek-r1') ||
       m.includes('reasoner') ||

@@ -1,4 +1,12 @@
 {
+  "1.0.28": {
+    "en": [
+      "Updated heavy model classification with 2026 flagship models including Claude Fable 5, Mythos 5, GPT-5, and OpenAI o1-mini/o3-mini special logic reasoning models"
+    ],
+    "ru": [
+      "Обновлена классификация тяжелых моделей флагманами 2026 года, включая Claude Fable 5, Mythos 5, GPT-5, а также специализированные логические модели OpenAI o1-mini/o3-mini"
+    ]
+  },
   "1.0.27": {
     "en": [
       "Enabled effort/reasoning parameter support for all models, with smart classification to restrict max/ultracode options to flagship/heavy reasoning models like Opus 4.8 and Claude Fable 5"
