@@ -14,20 +14,28 @@ export function isVimModeEnabled(): boolean {
   return config.editorMode === 'vim'
 }
 
+import { getInitialSettings } from '../../utils/settings/settings.js'
+
 export function getNewlineInstructions(): string {
+  const settings = getInitialSettings()
+  const isRussian = settings?.language?.toLowerCase() === 'russian' || settings?.language?.toLowerCase() === 'ru'
+
   // Apple Terminal on macOS uses native modifier key detection for Shift+Enter
   if (env.terminal === 'Apple_Terminal' && process.platform === 'darwin') {
-    return 'shift + ⏎ for newline'
+    return isRussian ? 'shift + ⏎ для новой строки' : 'shift + ⏎ for newline'
   }
 
   // For iTerm2 and VSCode, show Shift+Enter instructions if installed
   if (isShiftEnterKeyBindingInstalled()) {
-    return 'shift + ⏎ for newline'
+    return isRussian ? 'shift + ⏎ для новой строки' : 'shift + ⏎ for newline'
   }
 
   // Otherwise show backslash+return instructions
-  return hasUsedBackslashReturn()
-    ? '\\⏎ for newline'
+  if (hasUsedBackslashReturn()) {
+    return isRussian ? '\\⏎ для новой строки' : '\\⏎ for newline'
+  }
+  return isRussian
+    ? 'обратный слэш (\\) + return (⏎) для новой строки'
     : 'backslash (\\) + return (⏎) for newline'
 }
 

@@ -1,4 +1,12 @@
 {
+  "1.0.22": {
+    "en": [
+      "Reactive on-the-fly i18n switching for all UI strings including help menus, inputs, and welcome messages"
+    ],
+    "ru": [
+      "Реактивное переключение i18n на лету для всех строк интерфейса, включая меню помощи, подсказки ввода и приветствие"
+    ]
+  },
   "1.0.21": {
     "en": [
       "Auto-refresh changelog from GitHub on startup; update notification now stays visible in chat"

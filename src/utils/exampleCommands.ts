@@ -7,6 +7,7 @@ import { execFileNoThrowWithCwd } from './execFileNoThrow.js'
 import { getIsGit, gitExe } from './git.js'
 import { logError } from './log.js'
 import { getGitEmail } from './user.js'
+import { getInitialSettings } from './settings/settings.js'
 
 // Patterns that mark a file as non-core (auto-generated, dependency, or config).
 // Used to filter example-command filename suggestions deterministically
@@ -145,7 +146,19 @@ export const getExampleCommandFromCache = memoize(() => {
     ? sample(projectConfig.exampleFiles)
     : '<filepath>'
 
-  const commands = [
+  const settings = getInitialSettings()
+  const isRussian = settings?.language?.toLowerCase() === 'russian' || settings?.language?.toLowerCase() === 'ru'
+
+  const commands = isRussian ? [
+    'исправить ошибки линтера',
+    'исправить ошибки проверки типов',
+    `как работает ${frequentFile}?`,
+    `сделай рефакторинг ${frequentFile}`,
+    'как мне залогировать ошибку?',
+    `измени ${frequentFile}, чтобы...`,
+    `напиши тест для ${frequentFile}`,
+    'создай утилиту logging.py, которая...',
+  ] : [
     'fix lint errors',
     'fix typecheck errors',
     `how does ${frequentFile} work?`,
@@ -156,7 +169,8 @@ export const getExampleCommandFromCache = memoize(() => {
     'create a util logging.py that...',
   ]
 
-  return `Try "${sample(commands)}"`
+  const template = isRussian ? 'Попробуйте "{cmd}"' : 'Try "{cmd}"'
+  return template.replace('{cmd}', sample(commands)!)
 })
 
 export const refreshExampleCommands = memoize(async (): Promise<void> => {

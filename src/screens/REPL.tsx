@@ -125,6 +125,7 @@ import { getLatestVersion, type AutoUpdaterResult } from '../utils/autoUpdater.j
 import { gt } from '../utils/semver.js';
 import { getInitialSettings } from '../utils/settings/settings.js';
 import { localize } from '../i18n/index.js';
+import { useSettings } from '../hooks/useSettings.js';
 import { refreshUpdatesJson } from '../utils/updatesSync.js';
 import { getGlobalConfig, saveGlobalConfig, saveGlobalConfigDeferred } from '../utils/config.js';
 import { hasConsoleBillingAccess } from '../utils/billing.js';
@@ -665,6 +666,7 @@ export function REPL({
   fallbackModel
 }: Props): React.ReactNode {
   const isRemoteSession = !!remoteSessionConfig;
+  const _settings = useSettings();
 
   // Env-var gates hoisted to mount-time — isEnvTruthy does toLowerCase+trim+
   // includes, and these were on the render path (hot during PageUp spam).

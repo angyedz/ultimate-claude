@@ -35,8 +35,10 @@ type Props = {
  *   </Byline>
  * </Text>
  */
+import { getInitialSettings } from '../../utils/settings/settings.js';
+import { localize } from '../../i18n/index.js';
+
 export function KeyboardShortcutHint(t0) {
-  const $ = _c(9);
   const {
     shortcut,
     action,
@@ -45,36 +47,21 @@ export function KeyboardShortcutHint(t0) {
   } = t0;
   const parens = t1 === undefined ? false : t1;
   const bold = t2 === undefined ? false : t2;
-  let t3;
-  if ($[0] !== bold || $[1] !== shortcut) {
-    t3 = bold ? <Text bold={true}>{shortcut}</Text> : shortcut;
-    $[0] = bold;
-    $[1] = shortcut;
-    $[2] = t3;
-  } else {
-    t3 = $[2];
-  }
-  const shortcutText = t3;
+
+  const shortcutText = bold ? <Text bold={true}>{shortcut}</Text> : shortcut;
+
+  const settings = getInitialSettings();
+  const lang = settings?.language?.toLowerCase();
+  const isRussian = lang === 'russian' || lang === 'ru';
+
+  const localizedAction = localize(`shortcut.action.${action}`, action);
+
   if (parens) {
-    let t4;
-    if ($[3] !== action || $[4] !== shortcutText) {
-      t4 = <Text>({shortcutText} to {action})</Text>;
-      $[3] = action;
-      $[4] = shortcutText;
-      $[5] = t4;
-    } else {
-      t4 = $[5];
-    }
-    return t4;
+    return isRussian
+      ? <Text>({shortcutText} — {localizedAction})</Text>
+      : <Text>({shortcutText} to {localizedAction})</Text>;
   }
-  let t4;
-  if ($[6] !== action || $[7] !== shortcutText) {
-    t4 = <Text>{shortcutText} to {action}</Text>;
-    $[6] = action;
-    $[7] = shortcutText;
-    $[8] = t4;
-  } else {
-    t4 = $[8];
-  }
-  return t4;
+  return isRussian
+    ? <Text>{shortcutText} — {localizedAction}</Text>
+    : <Text>{shortcutText} to {localizedAction}</Text>;
 }
