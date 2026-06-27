@@ -23,7 +23,8 @@
     "scripts/windows/ultimate-claude-aliases.ps1",
     "vendor/node-domexception-shim/",
     "docs/windows-aliases-and-launchers.md",
-    "README.md"
+    "README.md",
+    "updates.json"
   ],
   "scripts": {
     "build": "bun run scripts/build.ts",

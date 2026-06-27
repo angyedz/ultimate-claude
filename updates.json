@@ -1,0 +1,59 @@
+{
+  "1.0.19": [
+    "feat: improve autocomplete, support right arrow completion, and implement git skills installer"
+  ],
+  "1.0.18": [
+    "feat: add list, show, edit, and clear command-line subcommands to /memory"
+  ],
+  "1.0.17": [
+    "fix: globally clamp max and ultracode effort values to the highest supported level for all OpenAI-compatible models"
+  ],
+  "1.0.16": [
+    "fix: map max and ultracode effort values to max in OpenAI shim reasoning plan for DeepSeek and Zai models"
+  ],
+  "1.0.15": [
+    "feat: replace xhigh with max, add shimmering effect to max option, fix display mapping for max and ultracode effort levels"
+  ],
+  "1.0.14": [
+    "fix: align effort ▲ indicator to the center of label text"
+  ],
+  "1.0.13": [
+    "fix: move effort ▲ indicator below slider line"
+  ],
+  "1.0.12": [
+    "feat: redesign /effort command as horizontal slider UI"
+  ],
+  "1.0.11": [
+    "feat: add 4 new providers + rebrand onboarding to Ultimate Claude Code"
+  ],
+  "1.0.10": [
+    "Release version 1.0.10"
+  ],
+  "1.0.9": [
+    "feat: make /system /memory /config /session /system-reset /theme immediate mid-turn commands"
+  ],
+  "1.0.8": [
+    "feat: improve ultracode sea wave animation with 2D gradient"
+  ],
+  "1.0.7": [
+    "feat: support in-UI resets for /system and edit/reset screens for /memory"
+  ],
+  "1.0.6": [
+    "feat: implement local session manager and system-reset command"
+  ],
+  "1.0.5": [
+    "fix: scan entire message content for markdown syntax"
+  ],
+  "1.0.4": [
+    "fix: replace execSync shell wrapper with spawnSync when launching prompt editor"
+  ],
+  "1.0.3": [
+    "feat: remove all emojis/smileys, add cyan sea wave animation on ultracode focus"
+  ],
+  "1.0.2": [
+    "feat: simplify /update command to take no arguments"
+  ],
+  "1.0.1": [
+    "Release version 1.0.1"
+  ]
+}

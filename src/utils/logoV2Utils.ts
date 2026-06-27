@@ -1,6 +1,9 @@
 import { getDirectConnectServerUrl, getSessionId } from '../bootstrap/state.js'
 import { stringWidth } from '../ink/stringWidth.js'
 import type { LogOption } from '../types/logs.js'
+import { readFileSync } from 'fs'
+import { fileURLToPath } from 'url'
+import { dirname, join } from 'path'
 import { getSubscriptionName, isClaudeAISubscriber } from './auth.js'
 import { getCwd } from './cwd.js'
 import { getDisplayPath } from './file.js'
@@ -314,26 +317,19 @@ export function formatModelAndBilling(
  * For external users, uses public changelog
  */
 export function getRecentReleaseNotesSync(maxItems: number): string[] {
-  // For ants, use bundled changelog
-  if (process.env.USER_TYPE === 'ant') {
-    const changelog = MACRO.VERSION_CHANGELOG
-    if (changelog) {
-      const commits = changelog.trim().split('\n').filter(Boolean)
-      return commits.slice(0, maxItems)
-    }
-    return []
-  }
-
-  const changelog = getStoredChangelogFromMemory()
-  if (!changelog) {
-    return []
-  }
-
-  let parsed
+  let parsed: Record<string, string[]> = {};
   try {
-    parsed = parseChangelog(changelog)
+    const filePath = join(dirname(fileURLToPath(import.meta.url)), '..', 'updates.json');
+    const content = readFileSync(filePath, 'utf-8');
+    parsed = JSON.parse(content);
   } catch {
-    return []
+    // Fall back to original behavior
+    const changelog = getStoredChangelogFromMemory()
+    if (changelog) {
+      try {
+        parsed = parseChangelog(changelog)
+      } catch {}
+    }
   }
 
   // Get notes from recent versions

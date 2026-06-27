@@ -4,142 +4,121 @@
 
 ## Overview
 
-**Ultimate Claude** is a modern AI‑powered coding assistant that streamlines development with intelligent code generation, context‑aware suggestions, and deep analysis capabilities. It combines the best of Claude Code and OpenClaude, delivering a polished, vibrant command‑line experience.
+**Ultimate Claude** is a high-efficiency, fully private, and telemetry-free AI-powered coding assistant that brings elite development workflows directly to your terminal. Combining the robust capabilities of Claude Code and OpenClaude, it is designed from the ground up to offer **maximum customization, extreme ease of use, and lightning-fast developer efficiency**.
 
-- **Stunning UI** – Gradient glass‑morphism, smooth micro‑animations, and a friendly mascot.
-- **Effort Modes** – Choose between `low`, `medium`, `high`, `extra high`, and the exhaustive **`ultracode`** for maximum reasoning depth.
-- **Keyboard‑First Navigation** – Seamless arrow‑key selection with animated feedback.
-- **Extensible Architecture** – Built with TypeScript and the `ink` library, easy to extend with custom commands.
+- **Maximum Customization** – Seamlessly switch between Anthropic, DeepSeek, OpenAI, Gemini, and local providers. Easily configure rules, agents, and install modular skills directly from Git.
+- **Privacy First** – Fully telemetry-free. No phone-home, no background data leakage, and complete control over your session histories.
+- **Effort Modes on Demand** – Fine-tune reasoning budgets with a simple key press—ranging from `low`, `medium`, and `high` to the exhaustive, deep-thinking **`max`** and **`ultracode`** levels for complex refactorings.
+- **Elite Keyboard UX** – Interactive horizontal effort sliders, inline auto-completions, and Right-Arrow / Tab acceptance make navigation feel fluid and natural.
 
 ### Source Repositories
 - Claude Code: https://github.com/codeaashu/claude-code
 - OpenClaude: https://github.com/Gitlawb/openclaude
 
+---
+
 ## Features
 
-| Feature | Description |
-|--------|-------------|
-| **Ultracode Mode** | Pushes the model to its maximum token budget, delivering exhaustive reasoning and multiple solution paths. |
-| **Horizontal Effort Picker** | A sleek, animated selector that replaces the old vertical list, offering instant visual feedback. |
-| **Custom Theme** | Tailored color scheme with vibrant gradients and dark‑mode support for a premium look. |
-| **Extensible CLI** | Easy to add new commands or integrate with other services. |
-| **Cross‑Platform** | Works on macOS, Linux, and Windows (via Node.js). |
+| Feature | Focus | Description |
+| :--- | :--- | :--- |
+| **Exhaustive Reasoning** | Efficiency | **Ultracode** & **Max** effort levels give models maximum token budgets to explore multiple code pathways, catching edge cases before you compile. |
+| **Interactive Git Skills** | Customization | Install modular, custom command packages directly from any `.git` repository url inside the `/skills` menu. |
+| **Multi-Provider Support** | Customization | First-class integration with Anthropic, DeepSeek, Gemini, OpenAI, and local runners (Ollama / Llama.cpp) in just one command. |
+| **Memory Control** | Ease of Use | Edit, review, and clear what the AI remembers about your preferences and project rules via the `/memory` command. |
+| **Offline Changelogs** | Efficiency | Startup updates and recent release notes load instantly from a local file without sending outbound telemetry queries. |
+
+---
 
 ## Getting Started
 
 ### Prerequisites
 
-- **Node.js** (v18 or later) with **npm** or **bun**.
-- **Git** installed and available in your `PATH`.
+- **Node.js** (v22 or later)
+- **Bun** or **npm** installed on your system
+- **Git** configured and accessible in your shell environment
+
+---
 
 ## Quick Start
 
-**One‑line installers**
+Get up and running immediately using our automated one-line installers:
 
-- macOS / Linux:
+- **macOS / Linux**:
+  ```sh
+  curl -fsSL https://raw.githubusercontent.com/angyedz/ultimate-claude/main/install.sh | bash
+  ```
 
-```sh
-curl -fsSL https://raw.githubusercontent.com/angyedz/ultimate-claude/main/install.sh | bash
-```
+- **Windows (PowerShell)**:
+  ```powershell
+  irm https://raw.githubusercontent.com/angyedz/ultimate-claude/main/install.ps1 | iex
+  ```
 
-- Windows (PowerShell):
-
-```powershell
-irm https://raw.githubusercontent.com/angyedz/ultimate-claude/main/install.ps1 | iex
-```
-
-You can now launch Ultimate Claude from any terminal with:
-
+Once installed, start ultimate-claude in any repository directory using:
 ```sh
 ultimate-claude
 ```
 
+---
+
 ## Manual Installation
 
+To build and run ultimate-claude locally for development:
+
 ```bash
-# Clone the repository
+# 1. Clone the repository
 git clone https://github.com/angyedz/ultimate-claude.git
 cd ultimate-claude
 
-# Install dependencies
-npm install   # or `bun install`
-```
+# 2. Install dependencies
+bun install # or `npm install`
 
-
-```bash
-# Clone the repository (once we have a remote)
-# git clone https://github.com/your-org/ultimate-claude.git
-# cd ultimate-claude
-
-# Install dependencies
-npm install   # or `bun install`
-```
-
-**One‑line installers**
-
-- macOS / Linux:
-
-```sh
-curl -fsSL https://raw.githubusercontent.com/angyedz/ultimate-claude/main/install.sh | bash
-```
-
-- Windows (PowerShell):
-
-```powershell
-irm https://raw.githubusercontent.com/angyedz/ultimate-claude/main/install.ps1 | iex
-```
-
-
-```bash
-# Clone the repository (once we have a remote)
-# git clone https://github.com/angyedz/ultimate-claude.git
-# cd ultimate-claude
-
-# Install dependencies
-npm install   # or `bun install`
+# 3. Build the project
+bun run build # or `npm run build`
 ```
 
 ### Running the CLI
 
+Start the interactive coding environment:
 ```bash
-# Start the interactive UI
-npm run start   # or `bun run start`
+bun run start # or `npm run start`
 ```
 
-Use the left and right arrow keys to select an effort level. Press **Enter** to confirm. The `ultracode` level will produce the most extensive output.
+---
 
 ## Project Structure
 
 ```
 ultimate-claude/
-├─ src/
-│  ├─ components/          # UI components (EffortPicker, etc.)
-│  ├─ services/api/        # API wrappers for Claude endpoints
-│  ├─ utils/               # Helper utilities (effort logic, theming)
-│  └─ cli/                 # Command‑line entry points
-├─ assets/                 # Images, mascot, icons
-├─ README.md               # You're reading it!
-└─ package.json            # Project metadata and scripts
+├── src/
+│   ├── components/       # Stateful Ink terminal UI components (EffortPicker, SkillsMenu)
+│   ├── services/api/     # API transporters, shims, and model route controllers
+│   ├── utils/            # Shared utilities (local memory, changelogs, autocompletion)
+│   └── cli/              # Main process, terminal handlers, and CLI commands
+├── assets/               # Branding assets, mascot images, and design graphics
+├── updates.json          # Local offline changelog history
+├── package.json          # Dependency definition and packaging scripts
+└── README.md             # This documentation
 ```
-
-## Contributing
-
-We welcome contributions! Please follow these steps:
-
-1. Fork the repository.
-2. Create a feature branch (`git checkout -b feature/awesome‑feature`).
-3. Make your changes, ensuring the code passes all tests (`npm test`).
-4. Submit a pull request with a clear description of the changes.
-
-### Development Guidelines
-
-- **Styling** – Keep the UI vibrant but accessible; use the defined color tokens.
-- **Testing** – Add unit tests for new logic and UI components.
-- **Documentation** – Update the README and inline JSDoc comments for any public APIs.
-
-## License
-
-Distributed under the **MIT License**. See `LICENSE` for more information.
 
 ---
 
+## Contributing
+
+We love contributions! Follow these steps to improve the assistant:
+
+1. Fork this repository.
+2. Create your feature branch (`git checkout -b feature/amazing-feature`).
+3. Make changes and verify they compile and pass type checks (`bun run typecheck`).
+4. Commit your work and open a Pull Request explaining the enhancements.
+
+### Development Guidelines
+
+- **Keep It Private** – Do not add external trackers, analytics, or telephone-home endpoints.
+- **Maintain Performance** – Optimize rendering pathways to keep terminal interface repaints fast and flicker-free.
+- **Consistent Code** – Document any new custom commands or skills with clear instructions.
+
+---
+
+## License
+
+This project is distributed under the **MIT License**. Check out `LICENSE` for details.

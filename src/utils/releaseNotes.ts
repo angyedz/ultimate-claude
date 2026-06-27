@@ -1,5 +1,7 @@
 import axios from 'axios'
 import { mkdir, readFile, writeFile } from 'fs/promises'
+import { readFileSync } from 'fs'
+import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import { coerce } from 'semver'
 import { getIsNonInteractiveSession } from '../bootstrap/state.js'
@@ -430,8 +432,20 @@ export function getReleaseNotesForVersion(
   changelogContent: string = getStoredChangelogFromMemory(),
 ): string[] {
   try {
+    let localUpdates: Record<string, string[]> = {};
+    try {
+      const filePath = join(dirname(fileURLToPath(import.meta.url)), '..', 'updates.json');
+      const content = readFileSync(filePath, 'utf-8');
+      localUpdates = JSON.parse(content);
+    } catch {}
+
+    const normVersion = normalizePublicVersion(version);
+    if (localUpdates && localUpdates[normVersion]) {
+      return localUpdates[normVersion];
+    }
+
     const releaseNotes = parseChangelog(changelogContent)
-    return releaseNotes[normalizePublicVersion(version)] ?? []
+    return releaseNotes[normVersion] ?? []
   } catch (error) {
     logError(toError(error))
     return []
