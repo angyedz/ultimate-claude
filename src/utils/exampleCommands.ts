@@ -140,7 +140,7 @@ async function getFrequentlyModifiedFiles(): Promise<string[]> {
 
 const ONE_WEEK_IN_MS = 7 * 24 * 60 * 60 * 1000
 
-export const getExampleCommandFromCache = memoize(() => {
+export function getExampleCommandFromCache(): string {
   const projectConfig = getCurrentProjectConfig()
   const frequentFile = projectConfig.exampleFiles?.length
     ? sample(projectConfig.exampleFiles)
@@ -171,7 +171,7 @@ export const getExampleCommandFromCache = memoize(() => {
 
   const template = isRussian ? 'Попробуйте "{cmd}"' : 'Try "{cmd}"'
   return template.replace('{cmd}', sample(commands)!)
-})
+}
 
 export const refreshExampleCommands = memoize(async (): Promise<void> => {
   const projectConfig = getCurrentProjectConfig()

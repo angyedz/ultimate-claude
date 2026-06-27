@@ -1,4 +1,12 @@
 {
+  "1.0.23": {
+    "en": [
+      "Fixed programmatic settings change detection to allow real-time UI localization updates without restarts"
+    ],
+    "ru": [
+      "Исправлено автоопределение программных изменений настроек для обновления языка интерфейса на лету"
+    ]
+  },
   "1.0.22": {
     "en": [
       "Reactive on-the-fly i18n switching for all UI strings including help menus, inputs, and welcome messages"

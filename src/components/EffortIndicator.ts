@@ -15,13 +15,27 @@ import {
  * Build the text for the effort-changed notification, e.g. "◐ medium · /effort".
  * Returns undefined if the model doesn't support effort.
  */
+import { getInitialSettings } from '../utils/settings/settings.js'
+
 export function getEffortNotificationText(
   effortValue: EffortValue | undefined,
   model: string,
 ): string | undefined {
   if (!modelSupportsEffort(model)) return undefined
   const level = getDisplayedEffortLevel(model, effortValue)
-  return `${effortLevelToSymbol(level)} ${level} · /effort`
+
+  const settings = getInitialSettings()
+  const isRussian = settings?.language?.toLowerCase() === 'russian' || settings?.language?.toLowerCase() === 'ru'
+
+  let displayLevel: string = level
+  if (isRussian) {
+    if (level === 'low') displayLevel = 'низкий'
+    else if (level === 'medium') displayLevel = 'средний'
+    else if (level === 'high') displayLevel = 'высокий'
+    else if (level === 'xhigh') displayLevel = 'очень высокий'
+  }
+
+  return `${effortLevelToSymbol(level)} ${displayLevel} · /effort`
 }
 
 export function effortLevelToSymbol(level: EffortLevel): string {

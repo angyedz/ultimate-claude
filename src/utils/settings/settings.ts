@@ -505,6 +505,14 @@ export function updateSettingsForSource(
     // Invalidate the session cache since settings have been updated
     resetSettingsCache()
 
+    // Programmatically trigger a settings change event since internal writes
+    // suppress the filesystem watcher to avoid double notifications.
+    import('./changeDetector.js')
+      .then(({ notifyChange }) => {
+        notifyChange(source)
+      })
+      .catch(() => {})
+
     if (source === 'localSettings') {
       // Okay to add to gitignore async without awaiting
       void addFileGlobRuleToGitignore(
