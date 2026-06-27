@@ -1004,19 +1004,34 @@ export function getDefaultEffortForModel(
  * @returns Human-readable description
  */
 export function getEffortLevelDescription(level: EffortLevel | OpenAIEffortLevel): string {
+  const settings = getInitialSettings()
+  const isRussian = settings?.language?.toLowerCase() === 'russian' || settings?.language?.toLowerCase() === 'ru'
+
   switch (level) {
     case 'low':
-      return 'Quick, straightforward implementation with minimal overhead'
+      return isRussian
+        ? 'Быстрая, простая реализация с минимальными затратами'
+        : 'Quick, straightforward implementation with minimal overhead'
     case 'medium':
-      return 'Balanced approach with standard implementation and testing'
+      return isRussian
+        ? 'Сбалансированный подход со стандартной реализацией и тестированием'
+        : 'Balanced approach with standard implementation and testing'
     case 'high':
-      return 'Comprehensive implementation with extensive testing and documentation'
+      return isRussian
+        ? 'Комплексная реализация с расширенным тестированием и документацией'
+        : 'Comprehensive implementation with extensive testing and documentation'
     case 'max':
-      return 'Maximum capability with deepest reasoning (Opus 4.6+)'
+      return isRussian
+        ? 'Максимальная производительность с глубочайшим рассуждением (Opus 4.6+)'
+        : 'Maximum capability with deepest reasoning (Opus 4.6+)'
     case 'xhigh':
-      return 'Extra high reasoning effort for complex tasks'
+      return isRussian
+        ? 'Сверхвысокие рассуждения для сложных задач'
+        : 'Extra high reasoning effort for complex tasks'
     case 'ultracode':
-      return 'Forced maximum possible thinking tokens for extreme complexity'
+      return isRussian
+        ? 'Принудительный максимум токенов рассуждения для экстремально сложных задач'
+        : 'Forced maximum possible thinking tokens for extreme complexity'
   }
 }
 
@@ -1034,7 +1049,11 @@ export function getEffortValueDescription(value: EffortValue): string {
   if (typeof value === 'string') {
     return getEffortLevelDescription(value)
   }
-  return 'Balanced approach with standard implementation and testing'
+  const settings = getInitialSettings()
+  const isRussian = settings?.language?.toLowerCase() === 'russian' || settings?.language?.toLowerCase() === 'ru'
+  return isRussian
+    ? 'Сбалансированный подход со стандартной реализацией и тестированием'
+    : 'Balanced approach with standard implementation and testing'
 }
 
 export type OpusDefaultEffortConfig = {

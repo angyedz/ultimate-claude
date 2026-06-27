@@ -4,6 +4,8 @@ import { useTerminalSize } from '../hooks/useTerminalSize.js'
 import { useMainLoopModel } from '../hooks/useMainLoopModel.js'
 import { useAppState, useSetAppState } from '../state/AppState.js'
 import type { EffortLevel } from '../utils/effort.js'
+import { getInitialSettings } from '../utils/settings/settings.js'
+import { localize } from '../i18n/index.js'
 import {
   getAvailableEffortLevels,
   getDisplayedEffortLevel,
@@ -100,7 +102,7 @@ export function EffortPicker({ onSelect, onCancel }: Props) {
   const options: EffortOption[] = [
     {
       value: 'auto',
-      description: 'Use the default effort level for your model',
+      description: localize('effort.auto_description', 'Use the default effort level for your model'),
     },
     ...availableLevels.map(level => ({
       value: level,
@@ -188,13 +190,13 @@ export function EffortPicker({ onSelect, onCancel }: Props) {
     <Box flexDirection="column" paddingTop={1} paddingLeft={2}>
       {/* Header */}
       <Box marginBottom={1} flexDirection="row" gap={2}>
-        <Text bold color="white">Effort</Text>
+        <Text bold color="white">{localize('effort.title', 'Effort')}</Text>
         <Text dimColor>
           {supportsEffort && usesOpenAIEffort
             ? `OpenAI/Codex (${provider})`
             : supportsEffort
             ? `Claude · ${provider}`
-            : `Effort not supported for this model`}
+            : localize('effort.not_supported', 'Effort not supported for this model')}
         </Text>
       </Box>
 
@@ -203,7 +205,7 @@ export function EffortPicker({ onSelect, onCancel }: Props) {
         {/* Left plain section: "Faster" label padded to purple start */}
         <Box width={purpleStartCol} flexDirection="column">
           <Box flexDirection="row" justifyContent="flex-start">
-            <Text dimColor>Faster</Text>
+            <Text dimColor>{localize('effort.faster', 'Faster')}</Text>
           </Box>
           {/* Empty rows to match wave height */}
           {Array.from({ length: WAVE_HEIGHT - 1 }, (_, i) => (
@@ -215,7 +217,7 @@ export function EffortPicker({ onSelect, onCancel }: Props) {
         <Box flexDirection="column" width={purpleWidth}>
           {/* Row 0: "Smarter" text right-aligned over the wave */}
           <Box flexDirection="row" width={purpleWidth} justifyContent="flex-end">
-            <Text dimColor>Smarter</Text>
+            <Text dimColor>{localize('effort.smarter', 'Smarter')}</Text>
           </Box>
           {/* Wave rows 1..WAVE_HEIGHT-1 */}
           {Array.from({ length: WAVE_HEIGHT - 1 }, (_, rowY) => (
@@ -248,6 +250,17 @@ export function EffortPicker({ onSelect, onCancel }: Props) {
             : currentDisplayedLevel === opt.value
           const label = opt.value
 
+          const settings = getInitialSettings()
+          const isRussian = settings?.language?.toLowerCase() === 'russian' || settings?.language?.toLowerCase() === 'ru'
+
+          let displayLabel = label
+          if (isRussian) {
+            if (label === 'auto') displayLabel = 'авто'
+            else if (label === 'low') displayLabel = 'низкий'
+            else if (label === 'medium') displayLabel = 'средний'
+            else if (label === 'high') displayLabel = 'высокий'
+          }
+
           if (label === 'max') {
             const labelText = "max"
             const paddingLength = Math.max(0, slotWidth - labelText.length)
@@ -268,7 +281,7 @@ export function EffortPicker({ onSelect, onCancel }: Props) {
           }
 
           // Pad to slot width
-          const padded = label.slice(0, slotWidth).padEnd(slotWidth)
+          const padded = displayLabel.slice(0, slotWidth).padEnd(slotWidth)
           let col: string
           if (isFocused) col = 'white'
           else if (isCurrent) col = '#888'
@@ -284,7 +297,7 @@ export function EffortPicker({ onSelect, onCancel }: Props) {
       {/* Sub-label for ultracode */}
       {isFocusedUltracode && (
         <Box paddingLeft={Math.max(0, (options.length - 1) * slotWidth)} marginBottom={0}>
-          <Text dimColor>xhigh + workflows</Text>
+          <Text dimColor>{localize('effort.ultracode_sub', 'xhigh + workflows')}</Text>
         </Box>
       )}
 
@@ -295,7 +308,7 @@ export function EffortPicker({ onSelect, onCancel }: Props) {
 
       {/* Keyboard hint */}
       <Box>
-        <Text dimColor>←/→ to adjust · Enter to confirm · Esc to cancel</Text>
+        <Text dimColor>{localize('effort.controls_hint', '←/→ to adjust · Enter to confirm · Esc to cancel')}</Text>
       </Box>
     </Box>
   )

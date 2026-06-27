@@ -247,4 +247,12 @@ export const en = {
   'release_notes.back': '‹ Back to list',
   'release_notes.details_title': 'Release Notes for {version}',
   'release_notes.list_title': 'Select version to view release notes',
+
+  // Effort picker
+  'effort.not_supported': 'Effort not supported for this model',
+  'effort.faster': 'Faster',
+  'effort.smarter': 'Smarter',
+  'effort.ultracode_sub': 'xhigh + workflows',
+  'effort.controls_hint': '←/→ to adjust · Enter to confirm · Esc to cancel',
+  'effort.auto_description': 'Use the default effort level for your model',
 } as const

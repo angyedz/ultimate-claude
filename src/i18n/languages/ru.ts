@@ -253,4 +253,12 @@ export const ru = {
   'release_notes.back': '‹ Назад к списку',
   'release_notes.details_title': 'Описание обновлений для {version}',
   'release_notes.list_title': 'Выберите версию для просмотра изменений',
+
+  // Effort picker
+  'effort.not_supported': 'Уровень усилий не поддерживается для этой модели',
+  'effort.faster': 'Быстрее',
+  'effort.smarter': 'Умнее',
+  'effort.ultracode_sub': 'xhigh + автоматизация',
+  'effort.controls_hint': '←/→ для выбора · Enter для подтверждения · Esc для отмены',
+  'effort.auto_description': 'Использовать уровень усилий по умолчанию для вашей модели',
 } as const

@@ -1,4 +1,12 @@
 {
+  "1.0.25": {
+    "en": [
+      "Added auto screen-refresh on language change and fully localized all components, hints and descriptions inside the effort tab"
+    ],
+    "ru": [
+      "Добавлено автообновление экрана при смене языка и полностью локализованы все компоненты, подсказки и описания во вкладке уровня усилий"
+    ]
+  },
   "1.0.24": {
     "en": [
       "Fully localized all elements on the welcome screen; redesigned /release-notes to display updates inside an interactive scrollable modal window"
