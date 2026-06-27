@@ -10,6 +10,7 @@ import { getIsRemoteMode } from '../bootstrap/state.js';
 import type { Command } from '../commands.js';
 import { BLACK_CIRCLE } from '../constants/figures.js';
 import { useTerminalSize } from '../hooks/useTerminalSize.js';
+import { useSettings } from '../hooks/useSettings.js';
 import type { ScrollBoxHandle } from '../ink/components/ScrollBox.js';
 import { useTerminalNotification } from '../ink/useTerminalNotification.js';
 import { Box, Text } from '../ink.js';
@@ -52,30 +53,24 @@ import type { JumpHandle } from './VirtualMessageList.js';
 // and pegs CPU at 100%. Memo on agentDefinitions so a new messages array
 // doesn't invalidate the logo subtree. LogoV2/StatusNotices internally
 // subscribe to useAppState/useSettings for their own updates.
-const LogoHeader = React.memo(function LogoHeader(t0: {
+const LogoHeader = function LogoHeader({
+  agentDefinitions,
+  language,
+}: {
   agentDefinitions?: AgentDefinitionsResult;
+  language?: string;
 }) {
-  const $ = _c(3);
-  const {
-    agentDefinitions
-  } = t0;
-  let t1;
-  if ($[0] === Symbol.for("react.memo_cache_sentinel")) {
-    t1 = <LogoV2 />;
-    $[0] = t1;
-  } else {
-    t1 = $[0];
-  }
-  let t2;
-  if ($[1] !== agentDefinitions) {
-    t2 = <OffscreenFreeze><Box flexDirection="column" gap={1}>{t1}<React.Suspense fallback={null}><StatusNotices agentDefinitions={agentDefinitions} /></React.Suspense></Box></OffscreenFreeze>;
-    $[1] = agentDefinitions;
-    $[2] = t2;
-  } else {
-    t2 = $[2];
-  }
-  return t2;
-});
+  return (
+    <OffscreenFreeze>
+      <Box flexDirection="column" gap={1}>
+        <LogoV2 key={language} />
+        <React.Suspense fallback={null}>
+          <StatusNotices agentDefinitions={agentDefinitions} />
+        </React.Suspense>
+      </Box>
+    </OffscreenFreeze>
+  )
+};
 
 // Dead code elimination: conditional import for proactive mode
 /* eslint-disable @typescript-eslint/no-require-imports */
@@ -377,6 +372,7 @@ const MessagesImpl = ({
   const {
     columns
   } = useTerminalSize();
+  const settings = useSettings();
   const toggleShowAllShortcut = useShortcutDisplay('transcript:toggleShowAll', 'Transcript', 'Ctrl+E');
   // normalizeMessagesCached reuses per-message normalized output across
   // renders, so a single append no longer re-normalizes the whole transcript
@@ -681,7 +677,7 @@ const MessagesImpl = ({
   }, [tools, lookups_0]);
   return <>
       {/* Logo */}
-      {!hideLogo && !(renderRange && renderRange[0] > 0) && <LogoHeader agentDefinitions={agentDefinitions} />}
+      {!hideLogo && !(renderRange && renderRange[0] > 0) && <LogoHeader agentDefinitions={agentDefinitions} language={settings?.language} />}
 
       {/* Truncation indicator */}
       {hasTruncatedMessages_0 && <Divider title={`${toggleShowAllShortcut} to show ${chalk.bold(hiddenMessageCount_0)} previous messages`} width={columns} />}

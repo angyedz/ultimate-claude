@@ -1,4 +1,12 @@
 {
+  "1.0.26": {
+    "en": [
+      "Removed auto-clear upon language changes; implemented forced unmount/re-mount of the welcome screen component to redraw it in the new language dynamically without session loss"
+    ],
+    "ru": [
+      "Убран автозапуск очистки экрана при смене языка; реализован принудительный перемонтаж приветственного экрана для динамического перевода без потери сессии"
+    ]
+  },
   "1.0.25": {
     "en": [
       "Added auto screen-refresh on language change and fully localized all components, hints and descriptions inside the effort tab"

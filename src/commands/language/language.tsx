@@ -35,10 +35,7 @@ function LanguagePickerCommand({ onDone }: Props): React.ReactElement {
       const msg = chosen === 'russian'
         ? localize('language.set_russian', 'Язык интерфейса изменён на Русский.')
         : localize('language.set_english', 'Interface language set to English.');
-      onDone(msg, {
-        nextInput: '/clear',
-        submitNextInput: true
-      })
+      onDone(msg)
     },
     [onDone],
   )
