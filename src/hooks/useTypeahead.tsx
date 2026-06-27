@@ -406,6 +406,23 @@ export function useTypeahead({
   // that occurs when using useState + useEffect (effect runs after render).
   const syncPromptGhostText = useMemo((): InlineGhostText | undefined => {
     if (mode !== 'prompt' || suppressSuggestions) return undefined;
+
+    // Check for start-of-line command ghost text
+    const beforeCursor = input.slice(0, cursorOffset);
+    if (beforeCursor.startsWith('/') && !beforeCursor.includes(' ')) {
+      const partialCommand = beforeCursor.slice(1);
+      if (partialCommand.length > 0) {
+        const match = getBestCommandMatch(partialCommand, commands);
+        if (match) {
+          return {
+            text: match.suffix,
+            fullCommand: match.fullCommand,
+            insertPosition: 1 + partialCommand.length
+          };
+        }
+      }
+    }
+
     const midInputCommand = findMidInputSlashCommand(input, cursorOffset);
     if (!midInputCommand) return undefined;
     const match = getBestCommandMatch(midInputCommand.partialCommand, commands);
@@ -914,6 +931,18 @@ export function useTypeahead({
         return;
       }
 
+      // Check start of line command (for prompt mode)
+      const beforeCursor = input.slice(0, cursorOffset);
+      if (beforeCursor.startsWith('/') && !beforeCursor.includes(' ')) {
+        const fullCmd = effectiveGhostText.fullCommand; 
+        const after = input.slice(cursorOffset);
+        const newInput = fullCmd + ' ' + after;
+        const newCursorOffset = fullCmd.length + 1;
+        onInputChange(newInput);
+        setCursorOffset(newCursorOffset);
+        return;
+      }
+
       // Find the mid-input command to get its position (for prompt mode)
       const midInputCommand = findMidInputSlashCommand(input, cursorOffset);
       if (midInputCommand) {
@@ -1296,6 +1325,40 @@ export function useTypeahead({
 
   // Handle keyboard input for behaviors not covered by keybindings
   const handleKeyDown = (e: KeyboardEvent): void => {
+    // Handle right arrow to accept inline ghost text when cursor is at the end of the input
+    if (e.key === 'right' && effectiveGhostText && cursorOffset === input.length) {
+      e.preventDefault();
+
+      if (mode === 'bash') {
+        onInputChange(effectiveGhostText.fullCommand);
+        setCursorOffset(effectiveGhostText.fullCommand.length);
+        setInlineGhostText(undefined);
+        return;
+      }
+
+      const beforeCursor = input.slice(0, cursorOffset);
+      if (beforeCursor.startsWith('/') && !beforeCursor.includes(' ')) {
+        const fullCmd = effectiveGhostText.fullCommand; 
+        const after = input.slice(cursorOffset);
+        const newInput = fullCmd + ' ' + after;
+        const newCursorOffset = fullCmd.length + 1;
+        onInputChange(newInput);
+        setCursorOffset(newCursorOffset);
+        return;
+      }
+
+      const midInputCommand = findMidInputSlashCommand(input, cursorOffset);
+      if (midInputCommand) {
+        const before = input.slice(0, midInputCommand.startPos);
+        const after = input.slice(midInputCommand.startPos + midInputCommand.token.length);
+        const newInput = before + '/' + effectiveGhostText.fullCommand + ' ' + after;
+        const newCursorOffset = midInputCommand.startPos + 1 + effectiveGhostText.fullCommand.length + 1;
+        onInputChange(newInput);
+        setCursorOffset(newCursorOffset);
+        return;
+      }
+    }
+
     // Handle right arrow to accept prompt suggestion ghost text
     if (e.key === 'right' && !isViewingTeammate) {
       const suggestionText = promptSuggestion.text;

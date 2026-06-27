@@ -1,9 +1,8 @@
-import { c as _c } from "react-compiler-runtime";
 import capitalize from 'lodash-es/capitalize.js';
 import * as React from 'react';
-import { useMemo } from 'react';
-import { type Command, type CommandBase, type CommandResultDisplay, getCommandName, type PromptCommand } from '../../commands.js';
-import { Box, Text } from '../../ink.js';
+import { useMemo, useState, useCallback } from 'react';
+import { type Command, type CommandBase, type CommandResultDisplay, type PromptCommand, getCommands, clearCommandsCache } from '../../commands.js';
+import { Box, Text, useInput } from '../../ink.js';
 import { estimateSkillFrontmatterTokens, getSkillsPath } from '../../skills/loadSkillsDir.js';
 import { getDisplayPath } from '../../utils/file.js';
 import { formatTokens } from '../../utils/format.js';
@@ -13,16 +12,23 @@ import { plural } from '../../utils/stringUtils.js';
 import { ConfigurableShortcutHint } from '../ConfigurableShortcutHint.js';
 import { Dialog } from '../design-system/Dialog.js';
 import FullWidthRow from '../design-system/FullWidthRow.js';
+import TextInput from '../TextInput.js';
+import { getFsImplementation } from '../../utils/fsOperations.js';
+import { execFileNoThrow } from '../../utils/execFileNoThrow.js';
+import { getCwd } from '../../utils/cwd.js';
+import { join } from 'path';
 
 // Skills are always PromptCommands with CommandBase properties
 type SkillCommand = CommandBase & PromptCommand;
 type SkillSource = SettingSource | 'plugin' | 'mcp';
+
 type Props = {
   onExit: (result?: string, options?: {
     display?: CommandResultDisplay;
   }) => void;
   commands: Command[];
 };
+
 function getSourceTitle(source: SkillSource): string {
   if (source === 'plugin') {
     return 'Plugin skills';
@@ -32,9 +38,8 @@ function getSourceTitle(source: SkillSource): string {
   }
   return `${capitalize(getSettingSourceName(source))} skills`;
 }
+
 function getSourceSubtitle(source: SkillSource, skills: SkillCommand[]): string | undefined {
-  // MCP skills show server names; file-based skills show filesystem paths.
-  // Skill names are `<server>:<skill>`, not `mcp__<server>__…`.
   if (source === 'mcp') {
     const servers = [...new Set(skills.map(s => {
       const idx = s.name.indexOf(':');
@@ -46,31 +51,44 @@ function getSourceSubtitle(source: SkillSource, skills: SkillCommand[]): string 
   const hasCommandsSkills = skills.some(s => s.loadedFrom === 'commands_DEPRECATED');
   return hasCommandsSkills ? `${skillsPath}, ${getDisplayPath(getSkillsPath(source, 'commands'))}` : skillsPath;
 }
+
 function getSkillListLabel(skill: SkillCommand): string {
   const leafName = skill.name.split(':').pop() ?? skill.name;
   return leafName === skill.name ? skill.name : `${skill.name} - ${leafName}`;
 }
+
 export function getEmptySkillsMenuMessage(): string {
   return `Create skills in .claude/skills/<name>/SKILL.md or ${getUserSkillExampleDisplayPath()}`;
 }
-export function SkillsMenu(t0) {
-  const $ = _c(35);
-  const {
-    onExit,
-    commands
-  } = t0;
-  let t1;
-  if ($[0] !== commands) {
-    t1 = commands.filter(_temp);
-    $[0] = commands;
-    $[1] = t1;
-  } else {
-    t1 = $[1];
-  }
-  const skills = t1;
-  let groups: Record<SkillSource, SkillCommand[]>;
-  if ($[2] !== skills) {
-    groups = {
+
+function renderSkill(skill: SkillCommand) {
+  const estimatedTokens = estimateSkillFrontmatterTokens(skill);
+  const tokenDisplay = `~${formatTokens(estimatedTokens)}`;
+  const pluginName = skill.source === 'plugin' ? skill.pluginInfo?.pluginManifest.name : undefined;
+  return (
+    <FullWidthRow key={`${skill.name}-${skill.source}`}>
+      <Text>{getSkillListLabel(skill)}</Text>
+      <Text dimColor={true}>{pluginName ? ` · ${pluginName}` : ""} · {tokenDisplay} description tokens</Text>
+    </FullWidthRow>
+  );
+}
+
+export function SkillsMenu({ onExit, commands: initialCommands }: Props) {
+  const [commandsList, setCommandsList] = useState<Command[]>(initialCommands);
+  const [viewState, setViewState] = useState<'list' | 'install-prompt' | 'installing' | 'install-success' | 'install-error'>('list');
+  const [gitUrl, setGitUrl] = useState('');
+  const [cursorOffset, setCursorOffset] = useState(0);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const skills = useMemo(() => {
+    return commandsList.filter((cmd): cmd is SkillCommand =>
+      cmd.type === 'prompt' &&
+      (cmd.loadedFrom === 'skills' || cmd.loadedFrom === 'commands_DEPRECATED' || cmd.loadedFrom === 'plugin' || cmd.loadedFrom === 'mcp')
+    );
+  }, [commandsList]);
+
+  const skillsBySource = useMemo(() => {
+    const groups: Record<SkillSource, SkillCommand[]> = {
       policySettings: [],
       userSettings: [],
       projectSettings: [],
@@ -86,160 +104,207 @@ export function SkillsMenu(t0) {
       }
     }
     for (const group of Object.values(groups)) {
-      group.sort(_temp2);
+      group.sort((a, b) => a.name.localeCompare(b.name));
     }
-    $[2] = skills;
-    $[3] = groups;
-  } else {
-    groups = $[3];
-  }
-  const skillsBySource = groups;
-  let t2;
-  if ($[4] !== onExit) {
-    t2 = () => {
-      onExit("Skills dialog dismissed", {
-        display: "system"
-      });
-    };
-    $[4] = onExit;
-    $[5] = t2;
-  } else {
-    t2 = $[5];
-  }
-  const handleCancel = t2;
-  if (skills.length === 0) {
-    let t3;
-    if ($[6] === Symbol.for("react.memo_cache_sentinel")) {
-      t3 = <FullWidthRow><Text dimColor={true}>{getEmptySkillsMenuMessage()}</Text></FullWidthRow>;
-      $[6] = t3;
-    } else {
-      t3 = $[6];
+    return groups;
+  }, [skills]);
+
+  const handleCancel = useCallback(() => {
+    onExit("Skills dialog dismissed", {
+      display: "system"
+    });
+  }, [onExit]);
+
+  const handleGitInstall = useCallback(async (url: string) => {
+    const trimmed = url.trim();
+    if (!trimmed) {
+      setErrorMessage('Git URL cannot be empty.');
+      setViewState('install-error');
+      return;
     }
-    let t4;
-    if ($[7] === Symbol.for("react.memo_cache_sentinel")) {
-      t4 = <FullWidthRow><Text dimColor={true} italic={true}><ConfigurableShortcutHint action="confirm:no" context="Confirmation" fallback="Esc" description="close" /></Text></FullWidthRow>;
-      $[7] = t4;
-    } else {
-      t4 = $[7];
-    }
-    let t5;
-    if ($[8] !== handleCancel) {
-      t5 = <Dialog title="Skills" subtitle="No skills found" onCancel={handleCancel} hideInputGuide={true}>{t3}{t4}</Dialog>;
-      $[8] = handleCancel;
-      $[9] = t5;
-    } else {
-      t5 = $[9];
-    }
-    return t5;
-  }
-  const renderSkill = _temp3;
-  let t3;
-  if ($[10] !== skillsBySource) {
-    t3 = source_0 => {
-      const groupSkills = skillsBySource[source_0];
-      if (groupSkills.length === 0) {
-        return null;
+
+    setViewState('installing');
+
+    try {
+      const match = trimmed.match(/\/([^/]+?)(?:\.git)?$/);
+      const repoName = match ? match[1] : 'downloaded-skill-' + Date.now();
+
+      const fs = getFsImplementation();
+      const userSkillsPath = getSkillsPath('userSettings', 'skills');
+
+      if (!fs.existsSync(userSkillsPath)) {
+        await fs.mkdir(userSkillsPath);
       }
-      const title = getSourceTitle(source_0);
-      const subtitle = getSourceSubtitle(source_0, groupSkills);
-      return <Box flexDirection="column" key={source_0}><FullWidthRow><Text bold={true} dimColor={true}>{title}</Text>{subtitle && <Text dimColor={true}> ({subtitle})</Text>}</FullWidthRow>{groupSkills.map(skill_1 => renderSkill(skill_1))}</Box>;
-    };
-    $[10] = skillsBySource;
-    $[11] = t3;
-  } else {
-    t3 = $[11];
+
+      const targetPath = join(userSkillsPath, repoName);
+      if (fs.existsSync(targetPath)) {
+        await fs.rm(targetPath, { recursive: true, force: true });
+      }
+
+      const result = await execFileNoThrow('git', ['clone', trimmed, targetPath]);
+      if (result.code !== 0) {
+        setErrorMessage(`Git clone failed with code ${result.code}: ${result.stderr || result.error || 'Unknown error'}`);
+        setViewState('install-error');
+        return;
+      }
+
+      const skillFile = join(targetPath, 'SKILL.md');
+      const skillFileLower = join(targetPath, 'skill.md');
+      if (!fs.existsSync(skillFile) && !fs.existsSync(skillFileLower)) {
+        setErrorMessage(`Repository cloned, but no SKILL.md or skill.md found at the root of ${repoName}.`);
+        setViewState('install-error');
+        try {
+          await fs.rm(targetPath, { recursive: true, force: true });
+        } catch {}
+        return;
+      }
+
+      clearCommandsCache();
+      const reloaded = await getCommands(getCwd());
+      setCommandsList(reloaded);
+
+      setViewState('install-success');
+    } catch (err: any) {
+      setErrorMessage(`Installation failed: ${err.message || err}`);
+      setViewState('install-error');
+    }
+  }, []);
+
+  useInput((input, key) => {
+    if (viewState === 'list') {
+      if (input.toLowerCase() === 'i') {
+        setViewState('install-prompt');
+        setGitUrl('');
+        setCursorOffset(0);
+        setErrorMessage('');
+      }
+    } else if (viewState === 'install-success' || viewState === 'install-error') {
+      if (key.return || key.escape) {
+        setViewState('list');
+      }
+    }
+  });
+
+  const renderSkillGroup = (source: SkillSource) => {
+    const groupSkills = skillsBySource[source];
+    if (groupSkills.length === 0) {
+      return null;
+    }
+    const title = getSourceTitle(source);
+    const subtitle = getSourceSubtitle(source, groupSkills);
+    return (
+      <Box flexDirection="column" key={source}>
+        <FullWidthRow>
+          <Text bold={true} dimColor={true}>{title}</Text>
+          {subtitle && <Text dimColor={true}> ({subtitle})</Text>}
+        </FullWidthRow>
+        {groupSkills.map(skill => renderSkill(skill))}
+      </Box>
+    );
+  };
+
+  if (viewState === 'install-prompt') {
+    return (
+      <Dialog title="Install Skill from Git" subtitle="Enter repository URL to install custom skill" onCancel={() => setViewState('list')} isCancelActive={false}>
+        <Box flexDirection="column" gap={1}>
+          <Text>Git Repository URL (.git):</Text>
+          <Box borderStyle="round" borderColor="permission" paddingLeft={1}>
+            <TextInput
+              value={gitUrl}
+              onChange={setGitUrl}
+              onSubmit={handleGitInstall}
+              onExit={() => setViewState('list')}
+              focus={true}
+              showCursor={true}
+              columns={80}
+              cursorOffset={cursorOffset}
+              onChangeCursorOffset={setCursorOffset}
+            />
+          </Box>
+          <Text dimColor={true} italic={true}>
+            Press <ConfigurableShortcutHint action="confirm:no" context="Confirmation" fallback="Esc" description="back" /> to go back to list
+          </Text>
+        </Box>
+      </Dialog>
+    );
   }
-  const renderSkillGroup = t3;
-  const t4 = skills.length;
-  let t5;
-  if ($[12] !== skills.length) {
-    t5 = plural(skills.length, "skill");
-    $[12] = skills.length;
-    $[13] = t5;
-  } else {
-    t5 = $[13];
+
+  if (viewState === 'installing') {
+    return (
+      <Dialog title="Installing Skill" subtitle="Running git clone..." onCancel={() => {}} isCancelActive={false}>
+        <Box flexDirection="column" gap={1}>
+          <Text color="brand">Cloning {gitUrl}...</Text>
+          <Text dimColor={true}>Please wait while files are being downloaded and parsed.</Text>
+        </Box>
+      </Dialog>
+    );
   }
-  const t6 = `${t4} ${t5}`;
-  let t7;
-  if ($[14] !== renderSkillGroup) {
-    t7 = renderSkillGroup("projectSettings");
-    $[14] = renderSkillGroup;
-    $[15] = t7;
-  } else {
-    t7 = $[15];
+
+  if (viewState === 'install-success') {
+    return (
+      <Dialog title="Success!" subtitle="Skill installed successfully" onCancel={() => setViewState('list')} isCancelActive={false}>
+        <Box flexDirection="column" gap={1}>
+          <Text color="green">The skill was successfully cloned, verified, and loaded!</Text>
+          <Text dimColor={true} italic={true}>
+            Press <Text bold>[Enter]</Text> or <Text bold>[Esc]</Text> to return to the skills list
+          </Text>
+        </Box>
+      </Dialog>
+    );
   }
-  let t8;
-  if ($[16] !== renderSkillGroup) {
-    t8 = renderSkillGroup("userSettings");
-    $[16] = renderSkillGroup;
-    $[17] = t8;
-  } else {
-    t8 = $[17];
+
+  if (viewState === 'install-error') {
+    return (
+      <Dialog title="Error Installing Skill" subtitle="Installation failed" onCancel={() => setViewState('list')} isCancelActive={false}>
+        <Box flexDirection="column" gap={1}>
+          <Text color="red">{errorMessage}</Text>
+          <Text dimColor={true} italic={true}>
+            Press <Text bold>[Enter]</Text> or <Text bold>[Esc]</Text> to return to the skills list
+          </Text>
+        </Box>
+      </Dialog>
+    );
   }
-  let t9;
-  if ($[18] !== renderSkillGroup) {
-    t9 = renderSkillGroup("policySettings");
-    $[18] = renderSkillGroup;
-    $[19] = t9;
-  } else {
-    t9 = $[19];
-  }
-  let t10;
-  if ($[20] !== renderSkillGroup) {
-    t10 = renderSkillGroup("plugin");
-    $[20] = renderSkillGroup;
-    $[21] = t10;
-  } else {
-    t10 = $[21];
-  }
-  let t11;
-  if ($[22] !== renderSkillGroup) {
-    t11 = renderSkillGroup("mcp");
-    $[22] = renderSkillGroup;
-    $[23] = t11;
-  } else {
-    t11 = $[23];
-  }
-  let t12;
-  if ($[24] !== t10 || $[25] !== t11 || $[26] !== t7 || $[27] !== t8 || $[28] !== t9) {
-    t12 = <Box flexDirection="column" gap={1}>{t7}{t8}{t9}{t10}{t11}</Box>;
-    $[24] = t10;
-    $[25] = t11;
-    $[26] = t7;
-    $[27] = t8;
-    $[28] = t9;
-    $[29] = t12;
-  } else {
-    t12 = $[29];
-  }
-  let t13;
-  if ($[30] === Symbol.for("react.memo_cache_sentinel")) {
-    t13 = <FullWidthRow><Text dimColor={true} italic={true}><ConfigurableShortcutHint action="confirm:no" context="Confirmation" fallback="Esc" description="close" /></Text></FullWidthRow>;
-    $[30] = t13;
-  } else {
-    t13 = $[30];
-  }
-  let t14;
-  if ($[31] !== handleCancel || $[32] !== t12 || $[33] !== t6) {
-    t14 = <Dialog title="Skills" subtitle={t6} onCancel={handleCancel} hideInputGuide={true}>{t12}{t13}</Dialog>;
-    $[31] = handleCancel;
-    $[32] = t12;
-    $[33] = t6;
-    $[34] = t14;
-  } else {
-    t14 = $[34];
-  }
-  return t14;
-}
-function _temp3(skill_0) {
-  const estimatedTokens = estimateSkillFrontmatterTokens(skill_0);
-  const tokenDisplay = `~${formatTokens(estimatedTokens)}`;
-  const pluginName = skill_0.source === "plugin" ? skill_0.pluginInfo?.pluginManifest.name : undefined;
-  return <FullWidthRow key={`${skill_0.name}-${skill_0.source}`}><Text>{getSkillListLabel(skill_0)}</Text><Text dimColor={true}>{pluginName ? ` · ${pluginName}` : ""} · {tokenDisplay} description tokens</Text></FullWidthRow>;
-}
-function _temp2(a, b) {
-  return a.name.localeCompare(b.name);
-}
-function _temp(cmd) {
-  return cmd.type === "prompt" && (cmd.loadedFrom === "skills" || cmd.loadedFrom === "commands_DEPRECATED" || cmd.loadedFrom === "plugin" || cmd.loadedFrom === "mcp");
+
+  const skillCountText = `${skills.length} ${plural(skills.length, 'skill')}`;
+
+  const hasSkills = skills.length > 0;
+  const listContent = hasSkills ? (
+    <Box flexDirection="column" gap={1}>
+      {renderSkillGroup('projectSettings')}
+      {renderSkillGroup('userSettings')}
+      {renderSkillGroup('policySettings')}
+      {renderSkillGroup('plugin')}
+      {renderSkillGroup('mcp')}
+      <Box marginTop={1} flexDirection="column">
+        <Text dimColor={true}>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</Text>
+        <FullWidthRow>
+          <Text dimColor={true}>Press <Text bold={true} color="brand">[I]</Text> to install a skill from a Git repository</Text>
+        </FullWidthRow>
+      </Box>
+    </Box>
+  ) : (
+    <Box flexDirection="column">
+      <FullWidthRow>
+        <Text dimColor={true}>{getEmptySkillsMenuMessage()}</Text>
+      </FullWidthRow>
+      <Box marginTop={1} flexDirection="column">
+        <Text dimColor={true}>━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</Text>
+        <FullWidthRow>
+          <Text dimColor={true}>Press <Text bold={true} color="brand">[I]</Text> to install a skill from a Git repository</Text>
+        </FullWidthRow>
+      </Box>
+    </Box>
+  );
+
+  return (
+    <Dialog title="Skills" subtitle={skillCountText} onCancel={handleCancel} hideInputGuide={true}>
+      {listContent}
+      <FullWidthRow>
+        <Text dimColor={true} italic={true}>
+          <ConfigurableShortcutHint action="confirm:no" context="Confirmation" fallback="Esc" description="close" />
+        </Text>
+      </FullWidthRow>
+    </Dialog>
+  );
 }
