@@ -207,6 +207,9 @@ export const ru = {
   'logo.tmux_press_prefix': 'нажмите префикс дважды — Claude использует',
   'logo.message_from': 'Сообщение от {org}:',
   'logo.sandbox_hint': 'Ваши bash-команды будут выполняться в песочнице. Отключить: /sandbox.',
+  'logo.api_billing': 'Оплата по использованию API',
+  'logo.in_connector': 'в',
+  'logo.for_more': '{cmd} для подробностей',
 
   // REPL interface
   'repl.exit_message': 'Нажмите {key} еще раз для выхода',
@@ -243,4 +246,11 @@ export const ru = {
   'shortcut.action.cancel': 'отмена',
   'shortcut.action.confirm': 'подтвердить',
   'shortcut.action.back': 'назад',
+
+  // Release notes command
+  'release_notes.current': 'текущая',
+  'release_notes.close': '[Закрыть]',
+  'release_notes.back': '‹ Назад к списку',
+  'release_notes.details_title': 'Описание обновлений для {version}',
+  'release_notes.list_title': 'Выберите версию для просмотра изменений',
 } as const

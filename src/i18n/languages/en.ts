@@ -201,6 +201,9 @@ export const en = {
   'logo.tmux_press_prefix': 'press prefix twice - Claude uses',
   'logo.message_from': 'Message from {org}:',
   'logo.sandbox_hint': 'Your bash commands will be sandboxed. Disable with /sandbox.',
+  'logo.api_billing': 'API Usage Billing',
+  'logo.in_connector': 'in',
+  'logo.for_more': '{cmd} for more',
 
   // REPL interface
   'repl.exit_message': 'Press {key} again to exit',
@@ -237,4 +240,11 @@ export const en = {
   'shortcut.action.cancel': 'cancel',
   'shortcut.action.confirm': 'confirm',
   'shortcut.action.back': 'back',
+
+  // Release notes command
+  'release_notes.current': 'current',
+  'release_notes.close': '[Close]',
+  'release_notes.back': '‹ Back to list',
+  'release_notes.details_title': 'Release Notes for {version}',
+  'release_notes.list_title': 'Select version to view release notes',
 } as const

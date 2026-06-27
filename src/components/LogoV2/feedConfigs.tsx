@@ -22,7 +22,7 @@ export function createRecentActivityFeed(activities: LogOption[]): FeedConfig {
   return {
     title: localize('feed.recent_sessions', 'Recent Sessions'),
     lines,
-    footer: lines.length > 0 ? '/resume for more' : undefined,
+    footer: lines.length > 0 ? localize('logo.for_more', '/resume for more', { cmd: '/resume' }) : undefined,
     emptyMessage: localize('feed.no_sessions', 'No recent sessions')
   };
 }
@@ -40,7 +40,7 @@ export function createWhatsNewFeed(releaseNotes: string[]): FeedConfig {
   return {
     title: localize('logo.recent_updates', 'Ultimate Claude Code Updates'),
     lines,
-    footer: lines.length > 0 ? '/release-notes for more' : undefined,
+    footer: lines.length > 0 ? localize('logo.for_more', '/release-notes for more', { cmd: '/release-notes' }) : undefined,
     emptyMessage: localize('feed.check_release_notes', 'Check /release-notes for recent updates')
   };
 }

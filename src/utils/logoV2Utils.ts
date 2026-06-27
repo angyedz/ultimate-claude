@@ -20,6 +20,7 @@ import {
 import { gt } from './semver.js'
 import { loadMessageLogs } from './sessionStorage.js'
 import { getInitialSettings } from './settings/settings.js'
+import { localize } from '../i18n/index.js'
 
 // Layout constants
 const MAX_LEFT_WIDTH = 50
@@ -258,11 +259,11 @@ export function getLogoDisplayData(): {
     ? '/code/claude'
     : getDisplayPath(getCwd())
   const cwd = serverUrl
-    ? `${displayPath} in ${serverUrl.replace(/^https?:\/\//, '')}`
+    ? `${displayPath} ${localize('logo.in_connector', 'in')} ${serverUrl.replace(/^https?:\/\//, '')}`
     : displayPath
   const billingType = isClaudeAISubscriber()
     ? getSubscriptionName()
-    : 'API Usage Billing'
+    : localize('logo.api_billing', 'API Usage Billing')
   const agentName = getInitialSettings().agent
 
   return {

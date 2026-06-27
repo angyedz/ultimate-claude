@@ -1,4 +1,12 @@
 {
+  "1.0.24": {
+    "en": [
+      "Fully localized all elements on the welcome screen; redesigned /release-notes to display updates inside an interactive scrollable modal window"
+    ],
+    "ru": [
+      "Полностью локализованы все элементы приветственного экрана; переработана команда /release-notes для отображения обновлений в интерактивном модальном окне с перелистыванием"
+    ]
+  },
   "1.0.23": {
     "en": [
       "Fixed programmatic settings change detection to allow real-time UI localization updates without restarts"
