@@ -125,6 +125,7 @@ import { getLatestVersion, type AutoUpdaterResult } from '../utils/autoUpdater.j
 import { gt } from '../utils/semver.js';
 import { getInitialSettings } from '../utils/settings/settings.js';
 import { localize } from '../i18n/index.js';
+import { refreshUpdatesJson } from '../utils/updatesSync.js';
 import { getGlobalConfig, saveGlobalConfig, saveGlobalConfigDeferred } from '../utils/config.js';
 import { hasConsoleBillingAccess } from '../utils/billing.js';
 import { logEvent, type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS } from 'src/services/analytics/index.js';
@@ -2561,6 +2562,11 @@ export function REPL({
     });
   }, [addNotification]);
 
+  // On startup: refresh updates.json from GitHub (silent, non-blocking)
+  useEffect(() => {
+    void refreshUpdatesJson()
+  }, [])
+
   // Check for updates on startup
   useEffect(() => {
     async function checkUpdatesOnStartup() {
@@ -2576,7 +2582,7 @@ export function REPL({
               </Box>
             ),
             priority: 'high',
-            timeoutMs: 15000
+            timeoutMs: 60 * 60 * 1000 // 1 hour — stays visible until user acts
           });
         }
       } catch (err) {
