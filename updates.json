@@ -1,4 +1,12 @@
 {
+  "1.0.27": {
+    "en": [
+      "Enabled effort/reasoning parameter support for all models, with smart classification to restrict max/ultracode options to flagship/heavy reasoning models like Opus 4.8 and Claude Fable 5"
+    ],
+    "ru": [
+      "Включена поддержка выбора уровня усилий/раздумий для абсолютно всех моделей, с разделением на легкие и тяжелые модели (Opus 4.8, Claude Fable 5)"
+    ]
+  },
   "1.0.26": {
     "en": [
       "Removed auto-clear upon language changes; implemented forced unmount/re-mount of the welcome screen component to redraw it in the new language dynamically without session loss"

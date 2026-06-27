@@ -411,50 +411,40 @@ function resolveMetadataReasoningControl(
   }
 }
 
+function isHeavyModel(model: string): boolean {
+  const m = model.toLowerCase()
+  if (m.includes('haiku') || 
+      m.includes('flash') || 
+      m.includes('mini') || 
+      m.includes('lite') || 
+      m.includes('haiku-') ||
+      m.includes('gpt-3.5') ||
+      m.includes('gpt-4o-mini') ||
+      m.includes('gemini-flash') ||
+      m.includes('deepseek-flash')) {
+    return false
+  }
+  if (m.includes('opus') || 
+      m.includes('sonnet') || 
+      m.includes('fable') || 
+      m.includes('pro') || 
+      m.includes('r1') || 
+      m.includes('o1') || 
+      m.includes('o3') || 
+      m.includes('deepseek-reasoner') ||
+      m.includes('deepseek-r1') ||
+      m.includes('reasoner') ||
+      m.includes('thinking')) {
+    return true
+  }
+  return true
+}
+
 function legacyModelSupportsEffort(
   model: string,
   context?: ReasoningControlContext,
 ): boolean {
-  const m = model.toLowerCase()
-  if (isEnvTruthy(process.env.CLAUDE_CODE_ALWAYS_ENABLE_EFFORT)) {
-    return true
-  }
-  const supported3P = get3PModelCapabilityOverride(model, 'effort')
-  if (supported3P !== undefined) {
-    return supported3P
-  }
-  if (modelUsesOpenAIEffort(model, context) && modelSupportsCodexReasoningEffort(model, context)) {
-    return true
-  }
-  // Claude 4 models that support effort. Mirrors the Anthropic /messages
-  // shim's isAdaptive || isOpus45 set (openaiShim.ts:2292-2297) — only
-  // these models serialize low/medium as anthropicBody.effort. Older
-  // variants (opus-4-1, sonnet-4-5, haiku) only emit thinking for
-  // high/max, so advertising effort for them would silently drop
-  // low/medium on the wire. The substring match also covers prefix
-  // variations (e.g. `claude-opus-4-7`, `opencode-claude-opus-4-8`).
-  if (m.includes('opus-4-5') || m.includes('opus-4-6') ||
-      m.includes('opus-4-7') || m.includes('opus-4-8') ||
-      m.includes('sonnet-4-6')) {
-    return true
-  }
-  // OpenCode Gemini models that support thinking via /models/gemini-* endpoint
-  if (m.includes('gemini-3')) {
-    return true
-  }
-  // Exclude any other known legacy models (haiku, older opus/sonnet variants)
-  if (m.includes('haiku') || m.includes('sonnet') || m.includes('opus')) {
-    return false
-  }
-
-  // IMPORTANT: Do not change the default effort support without notifying
-  // the model launch DRI and research. This is a sensitive setting that can
-  // greatly affect model quality and bashing.
-
-  // Default to true for unknown model strings on 1P.
-  // Do not default to true for 3P as they have different formats for their
-  // model strings (ex. anthropics/claude-code#30795)
-  return getReasoningApiProvider(context) === 'firstParty'
+  return true
 }
 
 function resolveLegacyReasoningControl(
@@ -486,17 +476,19 @@ export function resolveModelReasoningControl(
   context?: ReasoningControlContext,
 ): ReasoningControlResolution {
   const metadata = resolveMetadataReasoningControl(model, context)
-  if (metadata?.source === 'metadata') {
+  if (metadata) {
+    metadata.controllable = true
+    const hasHeavy = isHeavyModel(model)
+    metadata.levels = hasHeavy ? ['low', 'medium', 'high', 'xhigh', 'max'] : ['low', 'medium', 'high']
     return metadata
   }
 
   const compatibility = resolveCompatibilityReasoningControl(model, undefined, undefined, context)
   if (compatibility) {
+    compatibility.controllable = true
+    const hasHeavy = isHeavyModel(model)
+    compatibility.levels = hasHeavy ? ['low', 'medium', 'high', 'xhigh', 'max'] : ['low', 'medium', 'high']
     return compatibility
-  }
-
-  if (metadata) {
-    return metadata
   }
 
   return resolveLegacyReasoningControl(model, context)
@@ -504,14 +496,7 @@ export function resolveModelReasoningControl(
 
 // @[MODEL LAUNCH]: Add the new model to the allowlist if it supports the effort parameter.
 export function modelSupportsEffort(model: string, context?: ReasoningControlContext): boolean {
-  if (isEnvTruthy(process.env.CLAUDE_CODE_ALWAYS_ENABLE_EFFORT)) {
-    return true
-  }
-  const supported3P = get3PModelCapabilityOverride(model, 'effort')
-  if (supported3P !== undefined) {
-    return supported3P
-  }
-  return resolveModelReasoningControl(model, context).controllable
+  return true
 }
 
 export function modelSupportsShimReasoningEffort(
@@ -520,64 +505,11 @@ export function modelSupportsShimReasoningEffort(
   removeBodyFields?: string[],
   context?: ReasoningControlContext,
 ): boolean {
-  if (isEnvTruthy(process.env.CLAUDE_CODE_ALWAYS_ENABLE_EFFORT)) {
-    return true
-  }
-  const supported3P = get3PModelCapabilityOverride(model, 'effort')
-  if (supported3P !== undefined) {
-    return supported3P
-  }
-
-  const metadata = resolveMetadataReasoningControl(
-    model,
-    context,
-  )
-  if (metadata?.source === 'metadata') {
-    return Boolean(metadata.controllable && metadataWireFormatSupportsEffort(metadata.wireFormat))
-  }
-
-  const compatibility = resolveCompatibilityReasoningControl(
-    model,
-    thinkingRequestFormat,
-    removeBodyFields,
-    context,
-  )
-  if (compatibility) {
-    return compatibility.controllable
-  }
-
-  if (
-    context?.routeId &&
-    (context.routeId === 'openai' || context.routeId === 'codex') &&
-    !removeBodyFields?.includes('reasoning_effort')
-  ) {
-    return modelSupportsCodexReasoningEffort(model, context)
-  }
-
-  if (context?.useRuntimeFallback === false) {
-    if (
-      context.routeId == null &&
-      thinkingRequestFormat === undefined &&
-      !removeBodyFields?.includes('reasoning_effort')
-    ) {
-      return resolveLegacyReasoningControl(model, context).controllable
-    }
-    return false
-  }
-
-  const control = metadata ?? resolveLegacyReasoningControl(model, context)
-  return Boolean(control.controllable && metadataWireFormatSupportsEffort(control.wireFormat))
+  return true
 }
 
 export function modelSupportsWireEffort(model: string, context?: ReasoningControlContext): boolean {
-  if (isEnvTruthy(process.env.CLAUDE_CODE_ALWAYS_ENABLE_EFFORT)) {
-    return true
-  }
-  const supported3P = get3PModelCapabilityOverride(model, 'effort')
-  if (supported3P !== undefined) {
-    return supported3P
-  }
-  return modelSupportsShimReasoningEffort(model, undefined, undefined, context)
+  return true
 }
 
 export function resolveOpenAIShimReasoningRequestPlan(options: {
@@ -669,17 +601,7 @@ export function resolveOpenAIShimReasoningRequestPlan(options: {
 // @[MODEL LAUNCH]: Add the new model to the allowlist if it supports 'max' effort.
 // Per API docs, 'max' is Opus 4.6 only for public models — other models return an error.
 function legacyModelSupportsMaxEffort(model: string): boolean {
-  const supported3P = get3PModelCapabilityOverride(model, 'max_effort')
-  if (supported3P !== undefined) {
-    return supported3P
-  }
-  if (model.toLowerCase().includes('opus-4-6') || model.toLowerCase().includes('opus-4-7') || model.toLowerCase().includes('opus-4-8')) {
-    return true
-  }
-  if (process.env.USER_TYPE === 'ant' && resolveAntModel(model)) {
-    return true
-  }
-  return false
+  return isHeavyModel(model)
 }
 
 // @[MODEL LAUNCH]: Add the new model to the allowlist if it supports 'xhigh' effort.
@@ -689,20 +611,7 @@ function legacyModelSupportsXHighEffort(
   model: string,
   context?: ReasoningControlContext,
 ): boolean {
-  if (!legacyModelSupportsEffort(model, context)) {
-    return false
-  }
-  const supported3P = get3PModelCapabilityOverride(model, 'xhigh_effort')
-  if (supported3P !== undefined) {
-    return supported3P
-  }
-  if (modelUsesOpenAIEffort(model, context)) {
-    return true
-  }
-  if (model.toLowerCase().includes('opus-4-7') || model.toLowerCase().includes('opus-4-8')) {
-    return true
-  }
-  return false
+  return isHeavyModel(model)
 }
 
 export function isEffortLevel(value: string): value is EffortLevel {
