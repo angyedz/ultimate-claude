@@ -1,5 +1,10 @@
 {
+  "1.0.33": {
+    "en": ["Removed /ads command"],
+    "ru": ["Удалена команда /ads"]
+  },
   "1.0.32": {
+
     "en": [
       "Completely removed all sponsored advertisement tips (Xiaomi MiMo, Atomic Chat, Atlas Cloud) and deactivated the sponsored tip loader"
     ],
