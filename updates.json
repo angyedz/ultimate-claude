@@ -1,4 +1,12 @@
 {
+  "1.0.29": {
+    "en": [
+      "Simplified isHeavyModel classification to use light-model exclusions instead of a hardcoded list, making it future-proof for any new flagship models"
+    ],
+    "ru": [
+      "Упрощена классификация тяжелых моделей: теперь используется исключение легких моделей вместо захардкоженного списка, обеспечивая совместимость со всеми будущими флагманами"
+    ]
+  },
   "1.0.28": {
     "en": [
       "Updated heavy model classification with 2026 flagship models including Claude Fable 5, Mythos 5, GPT-5, and OpenAI o1-mini/o3-mini special logic reasoning models"

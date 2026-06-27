@@ -419,35 +419,20 @@ function isHeavyModel(model: string): boolean {
     return true
   }
 
+  // Exclude lightweight, fast, or small models
   if (m.includes('haiku') || 
       m.includes('flash') || 
       m.includes('mini') || 
       m.includes('lite') || 
-      m.includes('haiku-') ||
+      m.includes('nano') ||
+      m.includes('small') ||
+      m.includes('micro') ||
       m.includes('gpt-3.5') ||
-      m.includes('gpt-4o-mini') ||
-      m.includes('gemini-flash') ||
-      m.includes('deepseek-flash')) {
+      m.includes('gpt-4o-mini')) {
     return false
   }
 
-  if (m.includes('opus') || 
-      m.includes('sonnet') || 
-      m.includes('fable') || 
-      m.includes('mythos') || 
-      m.includes('pro') || 
-      m.includes('r1') || 
-      m.includes('r2') || 
-      m.includes('o1') || 
-      m.includes('o3') || 
-      m.includes('gpt-5') || 
-      m.includes('gpt-4') || 
-      m.includes('deepseek-reasoner') ||
-      m.includes('deepseek-r1') ||
-      m.includes('reasoner') ||
-      m.includes('thinking')) {
-    return true
-  }
+  // Default to heavy (flagship) for everything else
   return true
 }
 
