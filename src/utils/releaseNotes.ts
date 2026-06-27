@@ -11,6 +11,7 @@ import { toError, getErrnoCode } from './errors.js'
 import { logError } from './log.js'
 import { isEssentialTrafficOnly } from './privacyLevel.js'
 import { gt } from './semver.js'
+import { getInitialSettings } from './settings/settings.js'
 import {
   normalizePublicVersion,
   ULTIMATE_CLAUDE_RELEASES_URL,
@@ -432,7 +433,7 @@ export function getReleaseNotesForVersion(
   changelogContent: string = getStoredChangelogFromMemory(),
 ): string[] {
   try {
-    let localUpdates: Record<string, string[]> = {};
+    let localUpdates: Record<string, { en: string[], ru: string[] } | string[]> = {};
     try {
       const filePath = join(dirname(fileURLToPath(import.meta.url)), '..', 'updates.json');
       const content = readFileSync(filePath, 'utf-8');
@@ -440,8 +441,18 @@ export function getReleaseNotesForVersion(
     } catch {}
 
     const normVersion = normalizePublicVersion(version);
+    
+    // Detect language
+    const settings = getInitialSettings();
+    const lang = settings?.language?.toLowerCase();
+    const isRussian = lang === 'russian' || lang === 'ru';
+
     if (localUpdates && localUpdates[normVersion]) {
-      return localUpdates[normVersion];
+      const notes = localUpdates[normVersion];
+      if (Array.isArray(notes)) {
+        return notes;
+      }
+      return isRussian ? (notes.ru || notes.en || []) : (notes.en || notes.ru || []);
     }
 
     const releaseNotes = parseChangelog(changelogContent)

@@ -317,7 +317,7 @@ export function formatModelAndBilling(
  * For external users, uses public changelog
  */
 export function getRecentReleaseNotesSync(maxItems: number): string[] {
-  let parsed: Record<string, string[]> = {};
+  let parsed: Record<string, { en: string[], ru: string[] } | string[]> = {};
   try {
     const filePath = join(dirname(fileURLToPath(import.meta.url)), '..', 'updates.json');
     const content = readFileSync(filePath, 'utf-8');
@@ -332,6 +332,11 @@ export function getRecentReleaseNotesSync(maxItems: number): string[] {
     }
   }
 
+  // Detect language
+  const settings = getInitialSettings();
+  const lang = settings?.language?.toLowerCase();
+  const isRussian = lang === 'russian' || lang === 'ru';
+
   // Get notes from recent versions
   const allNotes: string[] = []
   const versions = Object.keys(parsed)
@@ -341,7 +346,12 @@ export function getRecentReleaseNotesSync(maxItems: number): string[] {
   for (const version of versions) {
     const notes = parsed[version]
     if (notes) {
-      allNotes.push(...notes)
+      if (Array.isArray(notes)) {
+        allNotes.push(...notes)
+      } else {
+        const langNotes = isRussian ? (notes.ru || notes.en || []) : (notes.en || notes.ru || []);
+        allNotes.push(...langNotes)
+      }
     }
   }
 

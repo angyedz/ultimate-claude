@@ -121,7 +121,9 @@ import { isDangerousPermissionMode } from '../utils/permissions/PermissionMode.j
 import { WEB_FETCH_TOOL_NAME } from '../tools/WebFetchTool/prompt.js';
 import { SLEEP_TOOL_NAME } from '../tools/SleepTool/prompt.js';
 import { clearSpeculativeChecks } from '../tools/BashTool/bashPermissions.js';
-import type { AutoUpdaterResult } from '../utils/autoUpdater.js';
+import { getLatestVersion, type AutoUpdaterResult } from '../utils/autoUpdater.js';
+import { gt } from '../utils/semver.js';
+import { getInitialSettings } from '../utils/settings/settings.js';
 import { getGlobalConfig, saveGlobalConfig, saveGlobalConfigDeferred } from '../utils/config.js';
 import { hasConsoleBillingAccess } from '../utils/billing.js';
 import { logEvent, type AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS } from 'src/services/analytics/index.js';
@@ -2556,6 +2558,49 @@ export function REPL({
       </>,
       priority: 'medium'
     });
+  }, [addNotification]);
+
+  // Check for updates on startup
+  useEffect(() => {
+    async function checkUpdatesOnStartup() {
+      try {
+        const latest = await getLatestVersion('latest');
+        const current = MACRO.VERSION;
+        if (latest && gt(latest, current)) {
+          const settings = getInitialSettings();
+          const lang = settings?.language?.toLowerCase();
+          const isRussian = lang === 'russian' || lang === 'ru';
+          if (isRussian) {
+            addNotification({
+              key: 'startup-update-available',
+              jsx: (
+                <Box flexDirection="row" gap={1}>
+                  <Text color="warning">Доступно обновление!</Text>
+                  <Text>Новая версия: {latest} (Текущая: {current}). Введите /update для обновления.</Text>
+                </Box>
+              ),
+              priority: 'high',
+              timeoutMs: 15000
+            });
+          } else {
+            addNotification({
+              key: 'startup-update-available',
+              jsx: (
+                <Box flexDirection="row" gap={1}>
+                  <Text color="warning">Update available!</Text>
+                  <Text>New version: {latest} (Current: {current}). Type /update to install.</Text>
+                </Box>
+              ),
+              priority: 'high',
+              timeoutMs: 15000
+            });
+          }
+        }
+      } catch (err) {
+        // Silent error
+      }
+    }
+    void checkUpdatesOnStartup();
   }, [addNotification]);
   if (SandboxManager.isSandboxingEnabled()) {
     // If sandboxing is enabled (setting.sandbox is defined, initialise the manager)

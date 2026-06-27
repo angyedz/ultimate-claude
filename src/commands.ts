@@ -153,6 +153,7 @@ import mockLimits from './commands/mock-limits/index.js'
 import bridgeKick from './commands/bridge-kick.js'
 import version from './commands/version.js'
 import update from './commands/update/index.js'
+import language from './commands/language/index.js'
 import wiki from './commands/wiki/index.js'
 import summary from './commands/summary/index.js'
 import {
@@ -343,6 +344,7 @@ const COMMANDS = memoize((): Command[] => [
   tag,
   theme,
   logo,
+  language,
   feedback,
   goal,
   review,

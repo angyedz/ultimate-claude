@@ -1,59 +1,154 @@
 {
-  "1.0.19": [
-    "Улучшено автодополнение команд, добавлена поддержка клавиши Arrow Right для принятия подсказок и интерактивный установщик скиллов из Git"
-  ],
-  "1.0.18": [
-    "Добавлены консольные команды list, show, edit и clear для управления памятью через команду /memory"
-  ],
-  "1.0.17": [
-    "Исправлено ограничение максимального уровня размышления (max и ultracode) для всех OpenAI-совместимых моделей"
-  ],
-  "1.0.16": [
-    "Настроен маппинг параметров max и ultracode в OpenAI-совместимых планах рассуждения для моделей DeepSeek и Zai"
-  ],
-  "1.0.15": [
-    "Добавлен уровень размышления max вместо xhigh с градиентным переливанием текста в терминале"
-  ],
-  "1.0.14": [
-    "Исправлено выравнивание треугольного указателя ▲ по центру текста выбранного режима"
-  ],
-  "1.0.13": [
-    "Указатель треугольника ▲ опущен ниже линии выбора уровня размышления"
-  ],
-  "1.0.12": [
-    "Добавлен горизонтальный анимированный слайдер для выбора уровня размышления /effort"
-  ],
-  "1.0.11": [
-    "Интегрированы 4 новых провайдера API и проведена перезагрузка приветственного экрана"
-  ],
-  "1.0.10": [
-    "Техническое обновление версии 1.0.10"
-  ],
-  "1.0.9": [
-    "Команды /system, /memory, /config, /session, /system-reset и /theme переведены в быстрый синхронный режим исполнения"
-  ],
-  "1.0.8": [
-    "Улучшена анимация волн в режиме ultracode с использованием 2D градиентов"
-  ],
-  "1.0.7": [
-    "Добавлена возможность сброса системных настроек и редактирования памяти прямо из интерактивного интерфейса"
-  ],
-  "1.0.6": [
-    "Реализован локальный менеджер сессий и команда полного сброса состояния /system-reset"
-  ],
-  "1.0.5": [
-    "Исправлено сканирование разметки Markdown в теле текстовых сообщений"
-  ],
-  "1.0.4": [
-    "Замена оболочки запуска внешнего редактора с execSync на более стабильный spawnSync"
-  ],
-  "1.0.3": [
-    "Очищены лишние смайлы из интерфейса, добавлена анимированная бирюзовая волна при фокусе на режиме ultracode"
-  ],
-  "1.0.2": [
-    "Упрощена команда автоматического обновления /update (теперь запускается без аргументов)"
-  ],
-  "1.0.1": [
-    "Начальный стабильный релиз версии 1.0.1"
-  ]
+  "1.0.19": {
+    "en": [
+      "Improved command autocomplete, added Arrow Right support for suggestions, and interactive Git skills installer"
+    ],
+    "ru": [
+      "Улучшено автодополнение команд, добавлена поддержка клавиши Arrow Right для принятия подсказок и интерактивный установщик скиллов из Git"
+    ]
+  },
+  "1.0.18": {
+    "en": [
+      "Added list, show, edit, and clear command-line subcommands to /memory"
+    ],
+    "ru": [
+      "Добавлены консольные команды list, show, edit и clear для управления памятью через команду /memory"
+    ]
+  },
+  "1.0.17": {
+    "en": [
+      "Fixed reasoning effort limit clamping for OpenAI-compatible models"
+    ],
+    "ru": [
+      "Исправлено ограничение максимального уровня размышления для всех OpenAI-совместимых моделей"
+    ]
+  },
+  "1.0.16": {
+    "en": [
+      "Configured reasoning effort levels mapping in OpenAI shim for DeepSeek and Zai models"
+    ],
+    "ru": [
+      "Настроен маппинг параметров max и ultracode в OpenAI-совместимых планах рассуждения для моделей DeepSeek и Zai"
+    ]
+  },
+  "1.0.15": {
+    "en": [
+      "Added max reasoning effort mode with shimmering gradient effects and replaced xhigh mode"
+    ],
+    "ru": [
+      "Добавлен уровень размышления max вместо xhigh с градиентным переливанием текста в терминале"
+    ]
+  },
+  "1.0.14": {
+    "en": [
+      "Fixed alignment of the selected effort mode indicator arrow"
+    ],
+    "ru": [
+      "Исправлено выравнивание треугольного указателя ▲ по центру текста выбранного режима"
+    ]
+  },
+  "1.0.13": {
+    "en": [
+      "Moved the selection triangle indicator below the effort slider line"
+    ],
+    "ru": [
+      "Указатель треугольника ▲ опущен ниже линии выбора уровня размышления"
+    ]
+  },
+  "1.0.12": {
+    "en": [
+      "Redesigned the /effort selection layout into an interactive horizontal slider"
+    ],
+    "ru": [
+      "Добавлен горизонтальный анимированный слайдер для выбора уровня размышления /effort"
+    ]
+  },
+  "1.0.11": {
+    "en": [
+      "Added 4 new API providers and refreshed the startup welcome screen logo"
+    ],
+    "ru": [
+      "Интегрированы 4 новых провайдера API и проведена перезагрузка приветственного экрана"
+    ]
+  },
+  "1.0.10": {
+    "en": [
+      "Maintenance release version 1.0.10"
+    ],
+    "ru": [
+      "Техническое обновление версии 1.0.10"
+    ]
+  },
+  "1.0.9": {
+    "en": [
+      "Converted /system, /memory, /config, /session, /system-reset, and /theme commands into synchronous mid-turn actions"
+    ],
+    "ru": [
+      "Команды /system, /memory, /config, /session, /system-reset и /theme переведены в быстрый синхронный режим исполнения"
+    ]
+  },
+  "1.0.8": {
+    "en": [
+      "Improved sea wave animation details with 2D color gradients in ultracode mode"
+    ],
+    "ru": [
+      "Улучшена анимация волн в режиме ultracode с использованием 2D градиентов"
+    ]
+  },
+  "1.0.7": {
+    "en": [
+      "Added configuration resets and interactive memory updates directly in the terminal UI"
+    ],
+    "ru": [
+      "Добавлена возможность сброса системных настроек и редактирования памяти прямо из интерактивного интерфейса"
+    ]
+  },
+  "1.0.6": {
+    "en": [
+      "Implemented a local session manager and the full configuration reset /system-reset command"
+    ],
+    "ru": [
+      "Реализован локальный менеджер сессий и команда полного сброса состояния /system-reset"
+    ]
+  },
+  "1.0.5": {
+    "en": [
+      "Fixed Markdown parsing within message payloads"
+    ],
+    "ru": [
+      "Исправлено сканирование разметки Markdown в теле текстовых сообщений"
+    ]
+  },
+  "1.0.4": {
+    "en": [
+      "Replaced execSync shell wrapper with spawnSync for robust interactive editor launching"
+    ],
+    "ru": [
+      "Замена оболочки запуска внешнего редактора с execSync на более стабильный spawnSync"
+    ]
+  },
+  "1.0.3": {
+    "en": [
+      "Cleaned cluttering emojis and added cyan wave animations when selecting ultracode mode"
+    ],
+    "ru": [
+      "Очищены лишние смайлы из интерфейса, добавлена анимированная бирюзовая волна при фокусе на режиме ultracode"
+    ]
+  },
+  "1.0.2": {
+    "en": [
+      "Simplified /update command to install without arguments"
+    ],
+    "ru": [
+      "Упрощена команда автоматического обновления /update (теперь запускается без аргументов)"
+    ]
+  },
+  "1.0.1": {
+    "en": [
+      "Initial stable version release"
+    ],
+    "ru": [
+      "Начальный стабильный релиз версии 1.0.1"
+    ]
+  }
 }
