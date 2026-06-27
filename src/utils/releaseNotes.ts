@@ -450,9 +450,10 @@ export function getReleaseNotesForVersion(
     if (localUpdates && localUpdates[normVersion]) {
       const notes = localUpdates[normVersion];
       if (Array.isArray(notes)) {
-        return notes;
+        return notes.map(n => `${normVersion}: ${n}`);
       }
-      return isRussian ? (notes.ru || notes.en || []) : (notes.en || notes.ru || []);
+      const langNotes = isRussian ? (notes.ru || notes.en || []) : (notes.en || notes.ru || []);
+      return langNotes.map(n => `${normVersion}: ${n}`);
     }
 
     const releaseNotes = parseChangelog(changelogContent)

@@ -347,10 +347,10 @@ export function getRecentReleaseNotesSync(maxItems: number): string[] {
     const notes = parsed[version]
     if (notes) {
       if (Array.isArray(notes)) {
-        allNotes.push(...notes)
+        allNotes.push(...notes.map(n => `${version}: ${n}`))
       } else {
         const langNotes = isRussian ? (notes.ru || notes.en || []) : (notes.en || notes.ru || []);
-        allNotes.push(...langNotes)
+        allNotes.push(...langNotes.map(n => `${version}: ${n}`))
       }
     }
   }
