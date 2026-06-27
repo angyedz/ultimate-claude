@@ -1,5 +1,7 @@
 // biome-ignore-all assist/source/organizeImports: internal-only import markers must not be reordered
 import { isUltrathinkEnabled } from './thinking.js'
+import { getSdkBetas } from '../bootstrap/state.js'
+import { getContextWindowForModel } from './context.js'
 import { getInitialSettings } from './settings/settings.js'
 import { isProSubscriber, isMaxSubscriber, isTeamSubscriber } from './auth.js'
 import { getFeatureValue_CACHED_MAY_BE_STALE } from 'src/services/analytics/growthbook.js'
@@ -412,6 +414,10 @@ function resolveMetadataReasoningControl(
 }
 
 function isHeavyModel(model: string): boolean {
+  if (isEnvTruthy(process.env.CLAUDE_CODE_ALWAYS_ENABLE_EFFORT)) {
+    return true
+  }
+
   const m = model.toLowerCase()
 
   // Special reasoning mini models that support max/ultracode
@@ -419,14 +425,18 @@ function isHeavyModel(model: string): boolean {
     return true
   }
 
+  // Check context window size using internal registry
+  try {
+    const contextWindow = getContextWindowForModel(model, getSdkBetas())
+    if (contextWindow && contextWindow < 100000) {
+      return false
+    }
+  } catch {
+    // Ignore context check errors
+  }
+
   // Exclude lightweight, fast, or small models
   if (m.includes('haiku') || 
-      m.includes('flash') || 
-      m.includes('mini') || 
-      m.includes('lite') || 
-      m.includes('nano') ||
-      m.includes('small') ||
-      m.includes('micro') ||
       m.includes('gpt-3.5') ||
       m.includes('gpt-4o-mini')) {
     return false

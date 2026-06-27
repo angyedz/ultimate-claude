@@ -1,4 +1,12 @@
 {
+  "1.0.30": {
+    "en": [
+      "Removed hardcoded brand lists for flagship models; implemented dynamic context window size checks (100k+ threshold) to support next-gen Flash models (e.g. Gemini 3.5 Flash, DeepSeek V4 Flash) with full reasoning features"
+    ],
+    "ru": [
+      "Убран хардкод списков брендов; реализована динамическая проверка размера контекстного окна (порог 100k+ токенов) для поддержки новых Flash-моделей (Gemini 3.5 Flash, DeepSeek V4 Flash) со всеми уровнями усилий"
+    ]
+  },
   "1.0.29": {
     "en": [
       "Simplified isHeavyModel classification to use light-model exclusions instead of a hardcoded list, making it future-proof for any new flagship models"
