@@ -1,4 +1,12 @@
 {
+  "1.0.21": {
+    "en": [
+      "Auto-refresh changelog from GitHub on startup; update notification now stays visible in chat"
+    ],
+    "ru": [
+      "Автообновление ченджлога с GitHub при запуске; уведомление о новой версии теперь остаётся в чате"
+    ]
+  },
   "1.0.20": {
     "en": [
       "Full Russian i18n: all UI, commands, menus, and notifications now respect the selected language"
