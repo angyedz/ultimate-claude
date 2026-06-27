@@ -1,4 +1,12 @@
 {
+  "1.0.31": {
+    "en": [
+      "Fixed reasoning effort type limitations; added max and ultracode values to API types (ReasoningEffort, parseReasoningEffort, OpenAIShimMessages, and OpenAIShimBeta) to prevent values from being silently discarded for OpenAI-compatible models (e.g. DeepSeek v4 Flash)"
+    ],
+    "ru": [
+      "Исправлено ограничение типов уровня усилий; добавлены значения max и ultracode в типы API (ReasoningEffort, parseReasoningEffort, OpenAIShimMessages и OpenAIShimBeta) для предотвращения их сброса на OpenAI-совместимых моделях (например, DeepSeek v4 Flash)"
+    ]
+  },
   "1.0.30": {
     "en": [
       "Removed hardcoded brand lists for flagship models; implemented dynamic context window size checks (100k+ threshold) to support next-gen Flash models (e.g. Gemini 3.5 Flash, DeepSeek V4 Flash) with full reasoning features"

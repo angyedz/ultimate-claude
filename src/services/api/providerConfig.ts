@@ -118,7 +118,7 @@ const CODEX_ALIAS_MODELS: Record<
 } as const
 
 type CodexAlias = keyof typeof CODEX_ALIAS_MODELS
-type ReasoningEffort = 'low' | 'medium' | 'high' | 'xhigh'
+type ReasoningEffort = 'low' | 'medium' | 'high' | 'xhigh' | 'max' | 'ultracode'
 type ThinkingType = 'enabled' | 'disabled'
 
 const OPENAI_CODEX_SHORTCUT_ALIASES = new Set(['codexplan', 'codexspark'])
@@ -286,7 +286,14 @@ function resolveRouteCatalogAliasApiName(options: {
 function parseReasoningEffort(value: string | undefined): ReasoningEffort | undefined {
   if (!value) return undefined
   const normalized = value.trim().toLowerCase()
-  if (normalized === 'low' || normalized === 'medium' || normalized === 'high' || normalized === 'xhigh') {
+  if (
+    normalized === 'low' ||
+    normalized === 'medium' ||
+    normalized === 'high' ||
+    normalized === 'xhigh' ||
+    normalized === 'max' ||
+    normalized === 'ultracode'
+  ) {
     return normalized
   }
   return undefined
