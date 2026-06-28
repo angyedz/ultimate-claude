@@ -1,16 +1,16 @@
 import * as React from 'react';
 import { useState } from 'react';
-import type { LocalJSXCommandCall } from '../types/command.js';
-import { Dialog } from '../components/design-system/Dialog.js';
-import { Select } from '../components/CustomSelect/index.js';
-import { detectLocale } from '../i18n/locale.js';
-import { getCwd } from '../utils/cwd.js';
+import type { LocalJSXCommandCall } from '../../types/command.js';
+import { Dialog } from '../../components/design-system/Dialog.js';
+import { Select } from '../../components/CustomSelect/index.js';
+import { detectLocale } from '../../i18n/locale.js';
+import { getCwd } from '../../utils/cwd.js';
 import { homedir } from 'os';
 import { join } from 'path';
 import { existsSync } from 'fs';
 import { rm } from 'fs/promises';
 import { spawnSync } from 'child_process';
-import { Box, Text } from '../ink.js';
+import { Box, Text } from '../../ink.js';
 
 async function performCompleteReset(): Promise<void> {
   const home = homedir();
@@ -110,12 +110,3 @@ function ClaudeResetManager({ onDone }: Props) {
 export const call: LocalJSXCommandCall = async (onDone, _context) => {
   return <ClaudeResetManager onDone={onDone} />;
 };
-
-const claudeResetCommand = {
-  type: 'local' as const,
-  name: 'claude-reset',
-  description: 'Complete reset of settings and session data',
-  call,
-};
-
-export default claudeResetCommand;
