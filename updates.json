@@ -1,4 +1,8 @@
 {
+  "1.0.41": {
+    "en": ["Fixed ReferenceError: usesAnthropicSetup is not defined and restored the missing Onboarding setup screen flow in interactiveHelpers.tsx"],
+    "ru": ["Исправлена ошибка ReferenceError: usesAnthropicSetup is not defined и восстановлен отсутствующий вызов экрана первоначальной настройки (Onboarding) в interactiveHelpers.tsx"]
+  },
   "1.0.40": {
     "en": ["Completely removed Gitlawb Opengateway and Xiaomi MiMo integration modules, descriptors, fallbacks, and related test files to clean up advertisements. Restored Anthropic (firstParty) as the default startup provider fallback"],
     "ru": ["Полностью удалены модули интеграции, дескрипторы, фоллбеки и связанные файлы тестов для Gitlawb Opengateway и Xiaomi MiMo, чтобы полностью очистить рекламу. В качестве резервного провайдера по умолчанию восстановлен Anthropic (firstParty)"]
