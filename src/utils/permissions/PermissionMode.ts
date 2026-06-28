@@ -1,6 +1,7 @@
 import { feature } from 'bun:bundle'
 import z from 'zod/v4'
 import { PAUSE_ICON } from '../../constants/figures.js'
+import { detectLocale } from '../../i18n/locale.js'
 // Types extracted to src/types/permissions.ts to break import cycles
 import {
   EXTERNAL_PERMISSION_MODES,
@@ -134,7 +135,37 @@ export function permissionModeFromString(str: string): PermissionMode {
     : 'default'
 }
 
+const PERMISSION_MODE_TITLES_RU: Record<PermissionMode, string> = {
+  default: 'По умолчанию',
+  plan: 'Режим планирования',
+  acceptEdits: 'Авто-принятие правок',
+  bypassPermissions: 'Обход разрешений',
+  fullAccess: 'Полный доступ',
+  dontAsk: 'Без вопросов',
+  turbo: 'Режим Турбо',
+  auto: 'Автоматический режим',
+  bubble: 'Пузырьковый режим',
+}
+
+const PERMISSION_MODE_SHORT_TITLES_RU: Record<PermissionMode, string> = {
+  default: 'По умолчанию',
+  plan: 'План',
+  acceptEdits: 'Авто',
+  bypassPermissions: 'Обход',
+  fullAccess: 'Полный',
+  dontAsk: 'БезВопросов',
+  turbo: 'Турбо',
+  auto: 'Авто',
+  bubble: 'Пузырь',
+}
+
 export function permissionModeTitle(mode: PermissionMode): string {
+  try {
+    const locale = detectLocale()
+    if (locale === 'ru') {
+      return PERMISSION_MODE_TITLES_RU[mode] ?? getModeConfig(mode).title
+    }
+  } catch {}
   return getModeConfig(mode).title
 }
 
@@ -149,6 +180,12 @@ export function isDangerousPermissionMode(
 }
 
 export function permissionModeShortTitle(mode: PermissionMode): string {
+  try {
+    const locale = detectLocale()
+    if (locale === 'ru') {
+      return PERMISSION_MODE_SHORT_TITLES_RU[mode] ?? getModeConfig(mode).shortTitle
+    }
+  } catch {}
   return getModeConfig(mode).shortTitle
 }
 

@@ -214,7 +214,7 @@ export const ru = {
   // REPL interface
   'repl.exit_message': 'Нажмите {key} еще раз для выхода',
   'repl.pasting_text': 'Вставка текста…',
-  'repl.on': 'в',
+  'repl.on': 'включен',
   'repl.shortcuts_hint': '? для справки по клавишам',
   'repl.vs_code_mac_hint': 'настройте macOptionClickForcesSelection в настройках VS Code',
   'repl.voice_hold_to_speak': 'удерживайте {key} для разговора',

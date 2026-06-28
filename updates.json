@@ -1,4 +1,8 @@
 {
+  "1.0.36": {
+    "en": ["Localized all settings items, themes, and permission modes into Russian. Fixed Russian translation bug where enabled states displayed as a single character 'в' instead of 'включено'"],
+    "ru": ["Полный перевод всех элементов настроек, тем оформления и режимов разрешений на русский язык. Исправлена ошибка локализации, при которой включенные состояния настроек отображались как буква 'в' вместо слова 'включено'"]
+  },
   "1.0.35": {
     "en": ["Fixed Windows installer: automatically installs Bun if missing, handles write permission restrictions by installing to LocalAppData, runs build step using Bun or npm fallback, and configures node-based launcher wrapper"],
     "ru": ["Исправлен установщик Windows: автоматическая установка Bun в случае его отсутствия, обход ограничений прав записи за счет установки в LocalAppData, сборка проекта на этапе установки и запуск через Node напрямую в враппере"]

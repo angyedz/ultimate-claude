@@ -28,6 +28,7 @@ import { Select } from '../CustomSelect/index.js';
 import { OutputStylePicker } from '../OutputStylePicker.js';
 import { LanguagePicker } from '../LanguagePicker.js';
 import { getExternalClaudeMdIncludes, getMemoryFiles, hasExternalClaudeMdIncludes, type MemoryFileInfo } from 'src/utils/claudemd.js';
+import { detectLocale } from '../../i18n/locale.js';
 import { KeyboardShortcutHint } from '../design-system/KeyboardShortcutHint.js';
 import { ConfigurableShortcutHint } from '../ConfigurableShortcutHint.js';
 import { Byline } from '../design-system/Byline.js';
@@ -90,6 +91,7 @@ export function Config({
   onIsSearchModeChange,
   contentHeight
 }: Props): React.ReactNode {
+  const isRu = currentLanguage === 'ru' || detectLocale() === 'ru';
   const {
     headerFocused,
     focusHeader
@@ -1821,13 +1823,13 @@ export function Config({
         minimum_version_set: choice === 'stay'
       });
     }} /> : <Box flexDirection="column" gap={1} marginY={insideModal ? undefined : 1}>
-          <SearchBox query={searchQuery} isFocused={isSearchMode && !headerFocused} isTerminalFocused={isTerminalFocused} cursorOffset={searchCursorOffset} placeholder="Search settings…" />
+          <SearchBox query={searchQuery} isFocused={isSearchMode && !headerFocused} isTerminalFocused={isTerminalFocused} cursorOffset={searchCursorOffset} placeholder={isRu ? "Поиск настроек…" : "Search settings…"} />
           <Box flexDirection="column">
             {filteredSettingsItems.length === 0 ? <Text dimColor italic>
-                No settings match &quot;{searchQuery}&quot;
+                {isRu ? `Настройки не найдены для "${searchQuery}"` : `No settings match "${searchQuery}"`}
               </Text> : <>
                 {scrollOffset > 0 && <Text dimColor>
-                    {figures.arrowUp} {scrollOffset} more above
+                    {figures.arrowUp} {scrollOffset} {isRu ? "еще выше" : "more above"}
                   </Text>}
                 {filteredSettingsItems.slice(scrollOffset, scrollOffset + maxVisible).map((setting_2, i) => {
             const actualIndex = scrollOffset + i;
@@ -1837,29 +1839,27 @@ export function Config({
                           <Box width={44}>
                             <Text color={isSelected ? 'suggestion' : undefined}>
                               {isSelected ? figures.pointer : ' '}{' '}
-                              {setting_2.label}
+                              {getLocalizedSettingLabel(setting_2.id, setting_2.label, isRu)}
                             </Text>
                           </Box>
                           <Box key={isSelected ? 'selected' : 'unselected'}>
                             {setting_2.type === 'boolean' ? <>
                                 <Text color={isSelected ? 'suggestion' : undefined}>
-                                  {setting_2.value.toString()}
+                                  {formatSettingValue(setting_2.id, setting_2.value, isRu)}
                                 </Text>
                                 {showThinkingWarning && setting_2.id === 'thinkingEnabled' && <Text color="warning">
                                       {' '}
-                                      Changing thinking mode mid-conversation
-                                      will increase latency and may reduce
-                                      quality.
+                                      {isRu ? 'Изменение режима размышления во время разговора увеличит задержку ответа и может снизить качество.' : 'Changing thinking mode mid-conversation will increase latency and may reduce quality.'}
                                     </Text>}
                               </> : setting_2.id === 'theme' ? <Text color={isSelected ? 'suggestion' : undefined}>
-                                {THEME_LABELS[setting_2.value.toString()] ?? setting_2.value.toString()}
+                                {(isRu ? THEME_LABELS_RU[setting_2.value.toString()] : THEME_LABELS[setting_2.value.toString()]) ?? setting_2.value.toString()}
                               </Text> : setting_2.id === 'notifChannel' ? <Text color={isSelected ? 'suggestion' : undefined}>
                                 <NotifChannelLabel value={setting_2.value.toString()} />
                               </Text> : setting_2.id === 'defaultPermissionMode' ? <Text color={setting_2.value === 'fullAccess' ? getModeColor('fullAccess') : isSelected ? 'suggestion' : undefined}>
                                 {permissionModeTitle(setting_2.value as PermissionMode)}
                               </Text> : setting_2.id === 'autoUpdatesChannel' && autoUpdaterDisabledReason ? <Box flexDirection="column">
                                 <Text color={isSelected ? 'suggestion' : undefined}>
-                                  disabled
+                                  {isRu ? 'отключено' : 'disabled'}
                                 </Text>
                                 <Text dimColor>
                                   (
@@ -1867,7 +1867,7 @@ export function Config({
                                   )
                                 </Text>
                               </Box> : <Text color={isSelected ? 'suggestion' : undefined}>
-                                {setting_2.value.toString()}
+                                {formatSettingValue(setting_2.id, setting_2.value, isRu)}
                               </Text>}
                           </Box>
                         </Box>
@@ -1876,43 +1876,45 @@ export function Config({
                 {scrollOffset + maxVisible < filteredSettingsItems.length && <Text dimColor>
                     {figures.arrowDown}{' '}
                     {filteredSettingsItems.length - scrollOffset - maxVisible}{' '}
-                    more below
+                    {isRu ? "еще ниже" : "more below"}
                   </Text>}
               </>}
           </Box>
           {headerFocused ? <Text dimColor>
               <Byline>
-                <KeyboardShortcutHint shortcut="←/→ tab" action="switch" />
-                <KeyboardShortcutHint shortcut="↓" action="return" />
-                <ConfigurableShortcutHint action="confirm:no" context="Settings" fallback="Esc" description="close" />
+                <KeyboardShortcutHint shortcut="←/→ tab" action={isRu ? "вкладки" : "switch"} />
+                <KeyboardShortcutHint shortcut="↓" action={isRu ? "вернуться" : "return"} />
+                <ConfigurableShortcutHint action="confirm:no" context="Settings" fallback="Esc" description={isRu ? "закрыть" : "close"} />
               </Byline>
             </Text> : isSearchMode ? <Text dimColor>
               <Byline>
-                <Text>Type to filter</Text>
-                <KeyboardShortcutHint shortcut="Enter/↓" action="select" />
-                <KeyboardShortcutHint shortcut="↑" action="tabs" />
-                <ConfigurableShortcutHint action="confirm:no" context="Settings" fallback="Esc" description="clear" />
+                <Text>{isRu ? "Введите для фильтрации" : "Type to filter"}</Text>
+                <KeyboardShortcutHint shortcut="Enter/↓" action={isRu ? "выбрать" : "select"} />
+                <KeyboardShortcutHint shortcut="↑" action={isRu ? "вкладки" : "tabs"} />
+                <ConfigurableShortcutHint action="confirm:no" context="Settings" fallback="Esc" description={isRu ? "очистить" : "clear"} />
               </Byline>
             </Text> : <Text dimColor>
               <Byline>
-                <ConfigurableShortcutHint action="select:accept" context="Settings" fallback="Space" description="change" />
-                <ConfigurableShortcutHint action="settings:close" context="Settings" fallback="Enter" description="save" />
-                <ConfigurableShortcutHint action="settings:search" context="Settings" fallback="/" description="search" />
-                <ConfigurableShortcutHint action="confirm:no" context="Settings" fallback="Esc" description="cancel" />
+                <ConfigurableShortcutHint action="select:accept" context="Settings" fallback="Space" description={isRu ? "изменить" : "change"} />
+                <ConfigurableShortcutHint action="settings:close" context="Settings" fallback="Enter" description={isRu ? "сохранить" : "save"} />
+                <ConfigurableShortcutHint action="settings:search" context="Settings" fallback="/" description={isRu ? "поиск" : "search"} />
+                <ConfigurableShortcutHint action="confirm:no" context="Settings" fallback="Esc" description={isRu ? "отмена" : "cancel"} />
               </Byline>
             </Text>}
         </Box>}
     </Box>;
 }
 function teammateModelDisplayString(value: string | null | undefined): string {
+  const isRu = detectLocale() === 'ru';
   if (value === undefined) {
     return modelDisplayString(getHardcodedTeammateModelFallback());
   }
-  if (value === null) return "Default (leader's model)";
+  if (value === null) return isRu ? "По умолчанию (модель лидера)" : "Default (leader's model)";
   return modelDisplayString(value);
 }
 function compactModelDisplayString(value: string | undefined): string {
-  if (value === undefined) return 'Default (main model)';
+  const isRu = detectLocale() === 'ru';
+  if (value === undefined) return isRu ? 'По умолчанию (основная модель)' : 'Default (main model)';
   return modelDisplayString(value);
 }
 const THEME_LABELS: Record<string, string> = {
@@ -1924,15 +1926,77 @@ const THEME_LABELS: Record<string, string> = {
   'dark-ansi': 'Dark mode (ANSI colors only)',
   'light-ansi': 'Light mode (ANSI colors only)'
 };
+const THEME_LABELS_RU: Record<string, string> = {
+  auto: 'Авто (соответствует терминалу)',
+  dark: 'Темная тема',
+  light: 'Светлая тема',
+  'dark-daltonized': 'Темная тема (цветовая слепота)',
+  'light-daltonized': 'Светлая тема (цветовая слепота)',
+  'dark-ansi': 'Темная тема (только ANSI-цвета)',
+  'light-ansi': 'Светлая тема (только ANSI-цвета)'
+};
+const CONFIG_LABELS_RU: Record<string, string> = {
+  autoCompactEnabled: 'Автосжатие разговора',
+  maxMessagesCompactionThreshold: 'Сжатие по количеству сообщений',
+  toolHistoryCompressionEnabled: 'Сжатие истории инструментов',
+  contextCollapseEnabled: 'Сжатие контекста (с потерями)',
+  showCacheStats: 'Отображение статистики кэша',
+  spinnerTipsEnabled: 'Показывать полезные советы',
+  prefersReducedMotion: 'Сокращение анимации',
+  thinkingEnabled: 'Режим размышления (thinking)',
+  fastMode: 'Быстрый режим',
+  promptSuggestionEnabled: 'Предложения промптов',
+  fileCheckpointingEnabled: 'Откат кода (контрольные точки)',
+  verbose: 'Подробный вывод логов',
+  terminalProgressBarEnabled: 'Прогресс-бар в терминале',
+  defaultStatusLineEnabled: 'Статус-бар по умолчанию',
+  showStatusInTerminalTab: 'Показать статус во вкладке терминала',
+  showTurnDuration: 'Показывать длительность шага',
+  defaultPermissionMode: 'Режим разрешений по умолчанию'
+};
+function getLocalizedSettingLabel(id: string, fallback: React.ReactNode, isRu: boolean): React.ReactNode {
+  if (isRu && typeof fallback === 'string') {
+    if (id === 'fastMode') {
+      return `Быстрый режим (только ${FAST_MODE_MODEL_DISPLAY_LABEL_RU()})`;
+    }
+    return CONFIG_LABELS_RU[id] ?? fallback;
+  }
+  return fallback;
+}
+function FAST_MODE_MODEL_DISPLAY_LABEL_RU(): string {
+  try {
+    return FAST_MODE_MODEL_DISPLAY;
+  } catch {
+    return 'быстрой модели';
+  }
+}
+function formatSettingValue(id: string, value: any, isRu: boolean): string {
+  if (typeof value === 'boolean') {
+    return value ? (isRu ? 'включено' : 'on') : (isRu ? 'выключено' : 'off');
+  }
+  const valStr = String(value);
+  if (!isRu) return valStr;
+
+  if (id === 'showCacheStats') {
+    if (valStr === 'off') return 'выключено';
+    if (valStr === 'compact') return 'компактная';
+    if (valStr === 'full') return 'полная';
+  }
+  if (id === 'maxMessagesCompactionThreshold') {
+    if (valStr === 'off') return 'выключено';
+  }
+  return valStr;
+}
 function NotifChannelLabel(t0) {
   const $ = _c(4);
   const {
     value
   } = t0;
+  const isRu = detectLocale() === 'ru';
   switch (value) {
     case "auto":
       {
-        return "Auto";
+        return isRu ? "Авто" : "Auto";
       }
     case "iterm2":
       {
@@ -1949,7 +2013,7 @@ function NotifChannelLabel(t0) {
       {
         let t1;
         if ($[1] === Symbol.for("react.memo_cache_sentinel")) {
-          t1 = <Text>Terminal Bell <Text dimColor={true}>(\a)</Text></Text>;
+          t1 = <Text>{isRu ? "Звуковой сигнал терминала" : "Terminal Bell"} <Text dimColor={true}>(\a)</Text></Text>;
           $[1] = t1;
         } else {
           t1 = $[1];
@@ -1980,11 +2044,11 @@ function NotifChannelLabel(t0) {
       }
     case "iterm2_with_bell":
       {
-        return "iTerm2 w/ Bell";
+        return isRu ? "iTerm2 со звуковым сигналом" : "iTerm2 w/ Bell";
       }
     case "notifications_disabled":
       {
-        return "Disabled";
+        return isRu ? "Выключено" : "Disabled";
       }
     default:
       {
