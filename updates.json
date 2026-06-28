@@ -1,4 +1,8 @@
 {
+  "1.0.35": {
+    "en": ["Fixed Windows installer: automatically installs Bun if missing, handles write permission restrictions by installing to LocalAppData, runs build step using Bun or npm fallback, and configures node-based launcher wrapper"],
+    "ru": ["Исправлен установщик Windows: автоматическая установка Bun в случае его отсутствия, обход ограничений прав записи за счет установки в LocalAppData, сборка проекта на этапе установки и запуск через Node напрямую в враппере"]
+  },
   "1.0.34": {
     "en": ["Fixed Windows installer: removed git-tracked file with colon in path (C:\\repo/fixtures/1ebf18.json) that caused checkout failures, added core.protectNTFS=false and checkout recovery to install.ps1"],
     "ru": ["Исправлен установщик Windows: удалён файл с двоеточием в пути (C:\\repo/fixtures/1ebf18.json), из-за которого падал git checkout; добавлены core.protectNTFS=false и восстановление checkout в install.ps1"]
