@@ -301,25 +301,7 @@ describe('detectBestProvider — orchestrator', () => {
     expect(result?.kind).toBe('ollama')
   })
 
-  test('skipLocal + OPENGATEWAY_API_KEY falls back to opengateway without probing', async () => {
-    let probeCalled = false
-    const fetchImpl = asFetch(async () => {
-      probeCalled = true
-      return new Response('{}', { status: 200 })
-    })
-
-    const result = await detectBestProvider({
-      env: { OPENGATEWAY_API_KEY: 'ogw_live_test_0000000000000000' },
-      fetchImpl,
-      skipLocal: true,
-      hasCodexAuth: () => false,
-    })
-    expect(result?.kind).toBe('gitlawb-opengateway')
-    expect(result?.model).toBe('mimo-v2.5-pro')
-    expect(probeCalled).toBe(false)
-  })
-
-  test('completely empty environment returns null (opengateway needs an API key)', async () => {
+  test('completely empty environment returns null', async () => {
     const fetchImpl = asFetch(async (): Promise<Response> => {
       throw new Error('nothing reachable')
     })
@@ -330,45 +312,7 @@ describe('detectBestProvider — orchestrator', () => {
       timeoutMs: 100,
       hasCodexAuth: () => false,
     })
-    // As of 2026-05-22 opengateway requires a key; with no credentials in env
-    // we no longer auto-select it — the caller surfaces a setup prompt instead.
     expect(result).toBeNull()
-  })
-
-  test('OPENGATEWAY_BASE_URL env overrides the opengateway fallback base URL', async () => {
-    const fetchImpl = asFetch(async (): Promise<Response> => {
-      throw new Error('nothing reachable')
-    })
-
-    const result = await detectBestProvider({
-      env: {
-        OPENGATEWAY_API_KEY: 'ogw_live_test_0000000000000000',
-        OPENGATEWAY_BASE_URL: 'http://localhost:8181/v1/xiaomi-mimo',
-      },
-      fetchImpl,
-      timeoutMs: 100,
-      hasCodexAuth: () => false,
-    })
-    expect(result?.kind).toBe('gitlawb-opengateway')
-    expect(result?.baseUrl).toBe('http://localhost:8181/v1/xiaomi-mimo')
-  })
-
-  test('OPENGATEWAY_BASE_URL normalizes hosted legacy Xiaomi route to smart route', async () => {
-    const fetchImpl = asFetch(async (): Promise<Response> => {
-      throw new Error('nothing reachable')
-    })
-
-    const result = await detectBestProvider({
-      env: {
-        OPENGATEWAY_API_KEY: 'ogw_live_test_0000000000000000',
-        OPENGATEWAY_BASE_URL: 'https://opengateway.gitlawb.com/v1/xiaomi-mimo',
-      },
-      fetchImpl,
-      timeoutMs: 100,
-      hasCodexAuth: () => false,
-    })
-    expect(result?.kind).toBe('gitlawb-opengateway')
-    expect(result?.baseUrl).toBe('https://opengateway.gitlawb.com/v1')
   })
 
   test('skipOpengatewayFallback returns null when nothing else is detected', async () => {

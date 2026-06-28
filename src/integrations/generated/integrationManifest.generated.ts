@@ -9,48 +9,6 @@ import type { ProviderPresetManifestEntry } from '../descriptors.js'
 
 export const PROVIDER_PRESET_MANIFEST = [
   {
-    "preset": "gitlawb-opengateway",
-    "routeKind": "gateway",
-    "routeId": "gitlawb-opengateway",
-    "vendorId": "openai",
-    "gatewayId": "gitlawb-opengateway",
-    "description": "Gitlawb Opengateway - (API key required, signup at https://gitlawb.com/opengateway/keys)",
-    "label": "Gitlawb Opengateway",
-    "name": "Gitlawb Opengateway",
-    "apiKeyEnvVars": [
-      "OPENGATEWAY_API_KEY"
-    ],
-    "baseUrlEnvVars": [
-      "OPENGATEWAY_BASE_URL",
-      "OPENAI_BASE_URL"
-    ],
-    "modelEnvVars": [
-      "OPENAI_MODEL"
-    ],
-    "fallbackBaseUrl": "https://opengateway.gitlawb.com/v1",
-    "fallbackModel": "mimo-v2.5-pro",
-    "badge": {
-      "text": "Recommended",
-      "color": "success"
-    }
-  },
-  {
-    "preset": "anthropic",
-    "routeKind": "vendor",
-    "routeId": "anthropic",
-    "vendorId": "anthropic",
-    "description": "Native Claude API (x-api-key auth)",
-    "apiKeyEnvVars": [
-      "ANTHROPIC_API_KEY"
-    ],
-    "baseUrlEnvVars": [
-      "ANTHROPIC_BASE_URL"
-    ],
-    "modelEnvVars": [
-      "ANTHROPIC_MODEL"
-    ]
-  },
-  {
     "preset": "dashscope-cn",
     "routeKind": "gateway",
     "routeId": "dashscope-cn",
@@ -271,6 +229,22 @@ export const PROVIDER_PRESET_MANIFEST = [
     ]
   },
   {
+    "preset": "anthropic",
+    "routeKind": "vendor",
+    "routeId": "anthropic",
+    "vendorId": "anthropic",
+    "description": "Native Claude API (x-api-key auth)",
+    "apiKeyEnvVars": [
+      "ANTHROPIC_API_KEY"
+    ],
+    "baseUrlEnvVars": [
+      "ANTHROPIC_BASE_URL"
+    ],
+    "modelEnvVars": [
+      "ANTHROPIC_MODEL"
+    ]
+  },
+  {
     "preset": "nearai",
     "routeKind": "vendor",
     "routeId": "nearai",
@@ -404,45 +378,6 @@ export const PROVIDER_PRESET_MANIFEST = [
     ]
   },
   {
-    "preset": "xiaomi-mimo",
-    "routeKind": "vendor",
-    "routeId": "xiaomi-mimo",
-    "vendorId": "xiaomi-mimo",
-    "description": "Xiaomi MiMo OpenAI-compatible endpoint",
-    "label": "Xiaomi MiMo",
-    "name": "Xiaomi MiMo",
-    "apiKeyEnvVars": [
-      "MIMO_API_KEY"
-    ],
-    "modelEnvVars": [
-      "OPENAI_MODEL"
-    ],
-    "badge": {
-      "text": "Sponsor",
-      "color": "success"
-    }
-  },
-  {
-    "preset": "xiaomi-mimo-token",
-    "routeKind": "gateway",
-    "routeId": "xiaomi-mimo-token",
-    "vendorId": "xiaomi-mimo",
-    "gatewayId": "xiaomi-mimo-token",
-    "description": "Xiaomi MiMo Token Plan subscription endpoint",
-    "label": "Xiaomi MiMo (Token Plan)",
-    "name": "Xiaomi MiMo (Token Plan)",
-    "apiKeyEnvVars": [
-      "MIMO_API_KEY"
-    ],
-    "modelEnvVars": [
-      "OPENAI_MODEL"
-    ],
-    "badge": {
-      "text": "Sponsor",
-      "color": "success"
-    }
-  },
-  {
     "preset": "zai",
     "routeKind": "vendor",
     "routeId": "zai",
@@ -482,8 +417,6 @@ export const PROVIDER_PRESET_MANIFEST = [
 ] as const satisfies readonly ProviderPresetManifestEntry[]
 export type ProviderPreset = (typeof PROVIDER_PRESET_MANIFEST)[number]['preset']
 export const ORDERED_PROVIDER_PRESETS = [
-  "gitlawb-opengateway",
-  "anthropic",
   "dashscope-cn",
   "dashscope-intl",
   "atlas-cloud",
@@ -503,6 +436,7 @@ export const ORDERED_PROVIDER_PRESETS = [
   "mistral",
   "moonshotai",
   "kimi-code",
+  "anthropic",
   "nearai",
   "nvidia-nim",
   "openai",
@@ -514,8 +448,6 @@ export const ORDERED_PROVIDER_PRESETS = [
   "together",
   "venice",
   "xai",
-  "xiaomi-mimo",
-  "xiaomi-mimo-token",
   "zai",
   "custom"
 ] as const

@@ -347,67 +347,7 @@ test('openai launch ignores codex persisted transport hints', async () => {
   assert.equal(env.OPENAI_API_KEY, 'sk-live')
 })
 
-test('buildStartupEnvFromProfile defaults fresh installs to Gitlawb Opengateway', async () => {
-  const env = await buildStartupEnvFromProfile({
-    persisted: null,
-    processEnv: {},
-  })
 
-  assert.equal(env.CLAUDE_CODE_USE_OPENAI, '1')
-  assert.equal(env.OPENAI_BASE_URL, 'https://opengateway.gitlawb.com/v1')
-  assert.equal(env.OPENAI_MODEL, 'mimo-v2.5-pro')
-  assert.equal(isDefaultStartupProviderEnv(env), true)
-})
-
-test('buildStartupEnvFromProfile fresh-install OpenGateway env is invalid without an API key (issue #1651)', async () => {
-  const env = await buildStartupEnvFromProfile({
-    persisted: null,
-    processEnv: {},
-  })
-
-  assert.equal(isDefaultStartupProviderEnv(env), true)
-  const error = await getProviderValidationError(env)
-  assert.notEqual(error, null)
-  assert.ok(error!.includes('OPENGATEWAY_API_KEY'))
-})
-
-test('applyStartupEnvFromProfile ignores invalid startup env and warns (issue #1651)', async () => {
-  const processEnv: NodeJS.ProcessEnv = {}
-  const warnings: string[] = []
-
-  const error = await applyStartupEnvFromProfile({
-    persisted: null,
-    processEnv,
-    onValidationError: message => warnings.push(message),
-  })
-
-  assert.notEqual(error, null)
-  assert.ok(error!.includes('OPENGATEWAY_API_KEY'))
-  assert.deepEqual(warnings, [
-    `Warning: ignoring saved provider profile. ${error}`,
-  ])
-  assert.deepEqual(processEnv, {})
-})
-
-test('applyStartupEnvFromProfile applies valid startup env (issue #1651)', async () => {
-  const processEnv: NodeJS.ProcessEnv = {
-    OPENGATEWAY_API_KEY: 'test-key',
-  }
-  const warnings: string[] = []
-
-  const error = await applyStartupEnvFromProfile({
-    persisted: null,
-    processEnv,
-    onValidationError: message => warnings.push(message),
-  })
-
-  assert.equal(error, null)
-  assert.deepEqual(warnings, [])
-  assert.equal(processEnv.CLAUDE_CODE_USE_OPENAI, '1')
-  assert.equal(processEnv.OPENAI_BASE_URL, 'https://opengateway.gitlawb.com/v1')
-  assert.equal(processEnv.OPENAI_MODEL, 'mimo-v2.5-pro')
-  assert.equal(processEnv.OPENGATEWAY_API_KEY, 'test-key')
-})
 
 test('buildStartupEnvFromProfile preserves explicit OpenAI-compatible env without a saved profile', async () => {
   const env = await buildStartupEnvFromProfile({

@@ -1070,8 +1070,9 @@ export function buildCompatibilityProcessEnv(options: {
   return env
 }
 
+
 export function isDefaultStartupProviderEnv(env: NodeJS.ProcessEnv): boolean {
-  return env[DEFAULT_STARTUP_PROVIDER_ENV_VAR] === 'gitlawb-opengateway'
+  return env[DEFAULT_STARTUP_PROVIDER_ENV_VAR] === 'firstParty'
 }
 
 export function buildCodexOAuthProfileEnv(
@@ -1910,19 +1911,9 @@ export async function buildStartupEnvFromProfile(options?: {
       return processEnv
     }
 
-    // No saved profile — default to Gitlawb Opengateway.
-    const env = buildCompatibilityProcessEnv({
-      processEnv,
-      compatibilityMode: 'openai',
-      profileEnv: {
-        OPENAI_BASE_URL:
-          getRouteDefaultBaseUrl('gitlawb-opengateway') ??
-          'https://opengateway.gitlawb.com/v1',
-        OPENAI_MODEL:
-          getRouteDefaultModel('gitlawb-opengateway') ?? 'mimo-v2.5-pro',
-      },
-    })
-    env[DEFAULT_STARTUP_PROVIDER_ENV_VAR] = 'gitlawb-opengateway'
+    // No saved profile — default to firstParty.
+    const env = { ...processEnv }
+    env[DEFAULT_STARTUP_PROVIDER_ENV_VAR] = 'firstParty'
     return env
   }
 

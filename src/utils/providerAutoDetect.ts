@@ -45,13 +45,11 @@ export type DetectedProviderKind =
   | 'gemini'
   | 'mistral'
   | 'minimax'
-  | 'xiaomi-mimo'
   | 'xai'
   | 'nearai'
   | 'fireworks'
   | 'ollama'
   | 'lm-studio'
-  | 'gitlawb-opengateway'
 
 export type DetectedProvider = {
   kind: DetectedProviderKind
@@ -305,54 +303,6 @@ export async function detectLocalService(options?: {
  * Orchestrator: env scan first (sync, free), then local-service probes
  * (async, ~1-2s worst case) only if nothing was found in env.
  */
-const OPENGATEWAY_DEFAULT_BASE_URL = 'https://opengateway.gitlawb.com/v1'
-const OPENGATEWAY_DEFAULT_MODEL = 'mimo-v2.5-pro'
-
-function normalizeOpengatewayBaseUrl(baseUrl: string): string {
-  try {
-    const parsed = new URL(baseUrl)
-    const hostname = parsed.hostname.toLowerCase()
-    const path = parsed.pathname.replace(/\/+$/, '').toLowerCase()
-    if (
-      (hostname === 'opengateway.gitlawb.com' || hostname === 'opengateway.fly.dev') &&
-      (path === '/v1/xiaomi-mimo' || path === '/v1/gmi-cloud')
-    ) {
-      parsed.pathname = '/v1'
-      parsed.search = ''
-      parsed.hash = ''
-      return parsed.toString().replace(/\/+$/, '')
-    }
-  } catch {
-    return baseUrl
-  }
-  return baseUrl
-}
-
-/**
- * Fallback: the Gitlawb Opengateway exposes partner inference through a
- * smart OpenAI-compatible route. As of 2026-05-22 it requires a per-user API
- * key (signup at https://gitlawb.com/opengateway/keys); without a key we return
- * null so the caller surfaces the missing-credential prompt instead of
- * silently routing to an endpoint that will 401.
- */
-function defaultOpengatewayProvider(env: EnvLike): DetectedProvider | null {
-  const hasKey =
-    (typeof env.OPENGATEWAY_API_KEY === 'string' && env.OPENGATEWAY_API_KEY.trim().length > 0) ||
-    (typeof env.OPENAI_API_KEY === 'string' && env.OPENAI_API_KEY.trim().length > 0)
-  if (!hasKey) return null
-
-  const baseUrl =
-    (typeof env.OPENGATEWAY_BASE_URL === 'string' && env.OPENGATEWAY_BASE_URL.trim()) ||
-    OPENGATEWAY_DEFAULT_BASE_URL
-  return {
-    kind: 'gitlawb-opengateway',
-    source:
-      'Gitlawb Opengateway (API key required, signup at https://gitlawb.com/opengateway/keys)',
-    baseUrl: normalizeOpengatewayBaseUrl(baseUrl),
-    model: OPENGATEWAY_DEFAULT_MODEL,
-  }
-}
-
 export async function detectBestProvider(options?: {
   env?: EnvLike
   fetchImpl?: typeof fetch
@@ -384,7 +334,5 @@ export async function detectBestProvider(options?: {
     if (local) return local
   }
 
-  if (options?.skipOpengatewayFallback) return null
-
-  return defaultOpengatewayProvider(env)
+  return null
 }

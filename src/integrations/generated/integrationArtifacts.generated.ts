@@ -16,7 +16,6 @@ import vendorNearai from '../vendors/nearai.js'
 import vendorOpenai from '../vendors/openai.js'
 import vendorVenice from '../vendors/venice.js'
 import vendorXai from '../vendors/xai.js'
-import vendorXiaomiMimo from '../vendors/xiaomi-mimo.js'
 import vendorZai from '../vendors/zai.js'
 import gatewayAtlasCloud from '../gateways/atlas-cloud.js'
 import gatewayAtomicChat from '../gateways/atomic-chat.js'
@@ -29,7 +28,6 @@ import gatewayDashscopeCn from '../gateways/dashscope-cn.js'
 import gatewayDashscopeIntl from '../gateways/dashscope-intl.js'
 import gatewayGithubEnterprise from '../gateways/github-enterprise.js'
 import gatewayGithub from '../gateways/github.js'
-import gatewayGitlawbOpengateway from '../gateways/gitlawb-opengateway.js'
 import gatewayGroq from '../gateways/groq.js'
 import gatewayHicap from '../gateways/hicap.js'
 import gatewayKimiCode from '../gateways/kimi-code.js'
@@ -44,7 +42,6 @@ import gatewayPerplexity from '../gateways/perplexity.js'
 import gatewaySambanova from '../gateways/sambanova.js'
 import gatewayTogether from '../gateways/together.js'
 import gatewayVertex from '../gateways/vertex.js'
-import gatewayXiaomiMimoToken from '../gateways/xiaomi-mimo-token.js'
 import brandClaude from '../brands/claude.js'
 import brandDeepseek from '../brands/deepseek.js'
 import brandFireworks from '../brands/fireworks.js'
@@ -60,7 +57,6 @@ import brandNemotron from '../brands/nemotron.js'
 import brandOpenaiCompatibleAlias from '../brands/openai-compatible-alias.js'
 import brandQwen from '../brands/qwen.js'
 import brandXai from '../brands/xai.js'
-import brandXiaomiMimo from '../brands/xiaomi-mimo.js'
 import modelClaude from '../models/claude.js'
 import modelDeepseek from '../models/deepseek.js'
 import modelFireworksMerged from '../models/fireworks-merged.js'
@@ -77,13 +73,12 @@ import modelOpenaiCompatibleAlias from '../models/openai-compatible-alias.js'
 import modelOpencode from '../models/opencode.js'
 import modelQwen from '../models/qwen.js'
 import modelXai from '../models/xai.js'
-import modelXiaomiMimo from '../models/xiaomi-mimo.js'
 
-export const VENDOR_DESCRIPTORS = [vendorAnthropic, vendorBankr, vendorDeepseek, vendorFireworks, vendorGemini, vendorMinimax, vendorMoonshot, vendorNearai, vendorOpenai, vendorVenice, vendorXai, vendorXiaomiMimo, vendorZai] as const satisfies readonly VendorDescriptor[]
-export const GATEWAY_DESCRIPTORS = [gatewayAtlasCloud, gatewayAtomicChat, gatewayAzureOpenai, gatewayBedrock, gatewayCerebras, gatewayCohere, gatewayCustom, gatewayDashscopeCn, gatewayDashscopeIntl, gatewayGithubEnterprise, gatewayGithub, gatewayGitlawbOpengateway, gatewayGroq, gatewayHicap, gatewayKimiCode, gatewayLmstudio, gatewayMistral, gatewayNvidiaNim, gatewayOllama, gatewayOpencodeGo, gatewayOpencode, gatewayOpenrouter, gatewayPerplexity, gatewaySambanova, gatewayTogether, gatewayVertex, gatewayXiaomiMimoToken] as const satisfies readonly GatewayDescriptor[]
+export const VENDOR_DESCRIPTORS = [vendorAnthropic, vendorBankr, vendorDeepseek, vendorFireworks, vendorGemini, vendorMinimax, vendorMoonshot, vendorNearai, vendorOpenai, vendorVenice, vendorXai, vendorZai] as const satisfies readonly VendorDescriptor[]
+export const GATEWAY_DESCRIPTORS = [gatewayAtlasCloud, gatewayAtomicChat, gatewayAzureOpenai, gatewayBedrock, gatewayCerebras, gatewayCohere, gatewayCustom, gatewayDashscopeCn, gatewayDashscopeIntl, gatewayGithubEnterprise, gatewayGithub, gatewayGroq, gatewayHicap, gatewayKimiCode, gatewayLmstudio, gatewayMistral, gatewayNvidiaNim, gatewayOllama, gatewayOpencodeGo, gatewayOpencode, gatewayOpenrouter, gatewayPerplexity, gatewaySambanova, gatewayTogether, gatewayVertex] as const satisfies readonly GatewayDescriptor[]
 export const ANTHROPIC_PROXY_DESCRIPTORS = [] as const satisfies readonly AnthropicProxyDescriptor[]
-export const BRAND_DESCRIPTORS = [brandClaude, brandDeepseek, brandFireworks, brandGemini, brandGlm, brandGpt, brandKimi, brandLlama, brandMinimax, brandMistral, brandNearai, brandNemotron, brandOpenaiCompatibleAlias, brandQwen, brandXai, brandXiaomiMimo] as const satisfies readonly BrandDescriptor[]
-export const MODEL_DESCRIPTOR_GROUPS = [modelClaude, modelDeepseek, modelFireworksMerged, modelGemini, modelGlm, modelGpt, modelKimi, modelLlama, modelMinimax, modelMistral, modelNearai, modelNemotron, modelOpenaiCompatibleAlias, modelOpencode, modelQwen, modelXai, modelXiaomiMimo] as const satisfies readonly (readonly ModelDescriptor[])[]
+export const BRAND_DESCRIPTORS = [brandClaude, brandDeepseek, brandFireworks, brandGemini, brandGlm, brandGpt, brandKimi, brandLlama, brandMinimax, brandMistral, brandNearai, brandNemotron, brandOpenaiCompatibleAlias, brandQwen, brandXai] as const satisfies readonly BrandDescriptor[]
+export const MODEL_DESCRIPTOR_GROUPS = [modelClaude, modelDeepseek, modelFireworksMerged, modelGemini, modelGlm, modelGpt, modelKimi, modelLlama, modelMinimax, modelMistral, modelNearai, modelNemotron, modelOpenaiCompatibleAlias, modelOpencode, modelQwen, modelXai] as const satisfies readonly (readonly ModelDescriptor[])[]
 export const MODEL_DESCRIPTORS = MODEL_DESCRIPTOR_GROUPS.flat() satisfies readonly ModelDescriptor[]
 
 export { PROVIDER_PRESET_MANIFEST, ORDERED_PROVIDER_PRESETS } from './integrationManifest.generated.js'
