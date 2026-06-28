@@ -5,6 +5,8 @@ import { Dialog } from '../../components/design-system/Dialog.js';
 import { Select } from '../../components/CustomSelect/index.js';
 import { detectLocale } from '../../i18n/locale.js';
 import { getCwd } from '../../utils/cwd.js';
+import { getClaudeConfigHomeDir } from '../../utils/envUtils.js';
+import { getGlobalClaudeFile } from '../../utils/env.js';
 import { homedir } from 'os';
 import { join } from 'path';
 import { existsSync } from 'fs';
@@ -15,8 +17,12 @@ import { Box, Text } from '../../ink.js';
 async function performCompleteReset(): Promise<void> {
   const home = homedir();
   const cwd = getCwd();
+  const configHome = getClaudeConfigHomeDir();
+  const globalConfigFile = getGlobalClaudeFile();
 
   const pathsToDelete = [
+    configHome,
+    globalConfigFile,
     join(home, '.ultimate-claude'),
     join(home, '.ultimate-claude.json'),
     join(home, '.claude'),
@@ -35,8 +41,43 @@ async function performCompleteReset(): Promise<void> {
 }
 
 function relaunchApp() {
+  // Clear env vars to prevent inheriting the previous provider/model setup
+  const envCopy = { ...process.env };
+  const envVarsToClear = [
+    'CLAUDE_CODE_USE_GEMINI',
+    'GEMINI_API_KEY',
+    'CLAUDE_CODE_USE_OPENAI',
+    'OPENAI_API_KEY',
+    'OPENAI_MODEL',
+    'OPENAI_BASE_URL',
+    'OPENAI_API_BASE',
+    'CLAUDE_CODE_USE_BEDROCK',
+    'BEDROCK_API_KEY',
+    'AWS_ACCESS_KEY_ID',
+    'AWS_SECRET_ACCESS_KEY',
+    'AWS_REGION',
+    'CLAUDE_CODE_USE_VERTEX',
+    'VERTEX_API_KEY',
+    'CLAUDE_CODE_USE_MISTRAL',
+    'MISTRAL_API_KEY',
+    'CLAUDE_CODE_USE_GITHUB',
+    'GITHUB_TOKEN',
+    'CLAUDE_CODE_USE_OLLAMA',
+    'OLLAMA_API_BASE',
+    'ANTHROPIC_API_KEY',
+    'ANTHROPIC_BASE_URL',
+    'CLAUDE_CODE_USE_FOUNDRY',
+    'NVIDIA_NIM',
+    'CODEX_API_KEY',
+    'CLAUDE_CODE_OAUTH_TOKEN',
+  ];
+  for (const v of envVarsToClear) {
+    delete envCopy[v];
+  }
+
   spawnSync(process.argv[0], process.argv.slice(1), {
     stdio: 'inherit',
+    env: envCopy,
   });
   // eslint-disable-next-line custom-rules/no-process-exit
   process.exit(0);

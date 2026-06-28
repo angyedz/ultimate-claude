@@ -1,4 +1,8 @@
 {
+  "1.0.39": {
+    "en": ["Fixed reset issue: cleared all API provider and model environment variables during relaunch, resolved config file paths dynamically, and enabled onboarding screen to show for all third-party API providers"],
+    "ru": ["Исправлен сброс: очищены все переменные окружения провайдеров и моделей при перезапуске, пути файлов конфигурации теперь определяются динамически, и приветственный экран (onboarding) показывается для всех сторонних API-провайдеров"]
+  },
   "1.0.38": {
     "en": ["Fixed TypeError: command.load is not a function when invoking /claude-reset by splitting the command registration into index.ts and implementing lazy loading"],
     "ru": ["Исправлена ошибка TypeError: command.load is not a function при вызове /claude-reset: описание команды перенесено в index.ts с поддержкой отложенной загрузки (lazy loading)"]

@@ -109,24 +109,7 @@ export async function showSetupScreens(root: Root, permissionMode: PermissionMod
     return false;
   }
 
-  const usesAnthropicSetup = usesAnthropicAccountFlow();
-  const config = getGlobalConfig();
-  let onboardingShown = false;
 
-  // Skip onboarding dialog for third-party providers (no Anthropic account needed)
-  if (usesAnthropicSetup && (!config.theme || !config.hasCompletedOnboarding) // always show onboarding at least once
-  ) {
-    onboardingShown = true;
-    const {
-      Onboarding
-    } = await import('./components/Onboarding.js');
-    await showSetupDialog(root, done => <Onboarding onDone={() => {
-      completeOnboarding();
-      void done();
-    }} />, {
-      onChangeAppState
-    });
-  }
 
   // Always show the trust dialog in interactive sessions, regardless of permission mode.
   // The trust dialog is the workspace trust boundary — it warns about untrusted repos

@@ -1,6 +1,6 @@
 {
   "name": "ultimate-claude",
-  "version": "1.0.38",
+  "version": "1.0.39",
   "description": "Ultimate-Claude: Telemetry-free, highly customizable terminal coding assistant",
   "type": "module",
   "bin": {
