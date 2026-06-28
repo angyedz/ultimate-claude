@@ -51,6 +51,11 @@ if command -v bun >/dev/null 2>&1; then
   bun install
 elif command -v npm >/dev/null 2>&1; then
   npm install
+  # If bun is not available globally, install it locally via npm to run the build script
+  if ! command -v bun >/dev/null 2>&1; then
+    echo "Bun is required for building. Installing bun locally via npm..."
+    npm install --no-save bun
+  fi
 else
   die "Neither bun nor npm is available. Please install one of them."
 fi
