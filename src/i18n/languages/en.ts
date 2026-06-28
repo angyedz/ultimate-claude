@@ -11,6 +11,7 @@ export const en = {
     'Show per-turn and session cache hit/miss stats (works across all providers)',
   'commands.clear.description':
     'Clear conversation history and free up context',
+  'commands.claude-reset.description': 'Complete reset of all settings and session data',
   'commands.color.description': 'Set the prompt bar color for this session',
   'commands.compact.description':
     'Clear conversation history but keep a summary in context. Optional: /compact [instructions for summarization]',

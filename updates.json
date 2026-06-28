@@ -1,4 +1,8 @@
 {
+  "1.0.37": {
+    "en": ["Added /claude-reset command to perform a complete system reset, wipe all config/session directories, and automatically relaunch into onboarding/setup screens after confirmation"],
+    "ru": ["Добавлена команда /claude-reset для полного сброса системы, удаления всех конфигурационных файлов/сессий и автоматического перезапуска с переходом на экраны настройки после подтверждения"]
+  },
   "1.0.36": {
     "en": ["Localized all settings items, themes, and permission modes into Russian. Fixed Russian translation bug where enabled states displayed as a single character 'в' instead of 'включено'"],
     "ru": ["Полный перевод всех элементов настроек, тем оформления и режимов разрешений на русский язык. Исправлена ошибка локализации, при которой включенные состояния настроек отображались как буква 'в' вместо слова 'включено'"]
