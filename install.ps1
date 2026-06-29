@@ -112,8 +112,7 @@ $wrapperPath = "$binDir\ultimate-claude.ps1"
 # We launch the built cli using node directly, which avoids runtime bun dependency
 $wrapperContent = @"
 #!/usr/bin/env pwsh
-Set-Location -Path '$installDir'
-node bin/ultimate-claude @args
+node '$installDir\bin\ultimate-claude' @args
 "@
 
 $wrapperContent | Set-Content -Path $wrapperPath -Encoding UTF8
